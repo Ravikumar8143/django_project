@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block nav_admin_panel %}active{% endblock %}
+
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/manage.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="d-flex" style="min-height:calc(100vh - var(--topbar-h, 56px))">
+
+  {# ── Manage Sidebar ─────────────────────────────────────────────── #}
+  <nav id="manageSidebar" style="
+    width:220px; flex-shrink:0;
+    background:#f8fafc;
+    border-right:1px solid #e2e8f0;
+    padding:.75rem 0 1.5rem;
+    overflow-y:auto;
+    position:sticky; top:56px;
+    height:calc(100vh - 56px);
+  ">
+    <div style="padding:.25rem .9rem .6rem; font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; font-weight:700; color:#94a3b8;">
+      Users &amp; Access
+    </div>
+    <a href="{% url 'dashboard:manage_users' %}"
+       class="manage-link {% if manage_section == 'users' %}active{% endif %}">
+      <i class="bi bi-people-fill"></i> Users
+    </a>
+
+    <div style="padding:.75rem .9rem .6rem; font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; font-weight:700; color:#94a3b8;">
+      Infrastructure
+    </div>
+    <a href="{% url 'dashboard:manage_universities' %}"
+       class="manage-link {% if manage_section == 'universities' %}active{% endif %}">
+      <i class="bi bi-bank2"></i> Universities
+    </a>
+    <a href="{% url 'dashboard:manage_campuses' %}"
+       class="manage-link {% if manage_section == 'campuses' %}active{% endif %}">
+      <i class="bi bi-geo-alt-fill"></i> Campuses
+    </a>
+    <a href="{% url 'dashboard:manage_buildings' %}"
+       class="manage-link {% if manage_section == 'buildings' %}active{% endif %}">
+      <i class="bi bi-building"></i> Buildings
+    </a>
+    <a href="{% url 'dashboard:manage_rooms' %}"
+       class="manage-link {% if manage_section == 'rooms' %}active{% endif %}">
+      <i class="bi bi-door-open-fill"></i> Rooms
+    </a>
+
+    <div style="padding:.75rem .9rem .6rem; font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; font-weight:700; color:#94a3b8;">
+      Academic
+    </div>
+    <a href="{% url 'dashboard:manage_departments' %}"
+       class="manage-link {% if manage_section == 'departments' %}active{% endif %}">
+      <i class="bi bi-diagram-3-fill"></i> Departments
+    </a>
+    <a href="{% url 'dashboard:manage_academic_years' %}"
+       class="manage-link {% if manage_section == 'academic_years' %}active{% endif %}">
+      <i class="bi bi-calendar3"></i> Academic Years
+    </a>
+    <a href="{% url 'dashboard:manage_programs' %}"
+       class="manage-link {% if manage_section == 'programs' %}active{% endif %}">
+      <i class="bi bi-mortarboard-fill"></i> Programs
+    </a>
+    <a href="{% url 'dashboard:manage_course_categories' %}"
+       class="manage-link {% if manage_section == 'course_categories' %}active{% endif %}">
+      <i class="bi bi-tag-fill"></i> Course Categories
+    </a>
+    <a href="{% url 'dashboard:manage_courses' %}"
+       class="manage-link {% if manage_section == 'courses' %}active{% endif %}">
+      <i class="bi bi-book-fill"></i> Courses
+    </a>
+    <a href="{% url 'dashboard:manage_offerings' %}"
+       class="manage-link {% if manage_section == 'offerings' %}active{% endif %}">
+      <i class="bi bi-layout-split"></i> Sem Offerings
+    </a>
+    <a href="{% url 'dashboard:manage_sections' %}"
+       class="manage-link {% if manage_section == 'sections' %}active{% endif %}">
+      <i class="bi bi-collection-fill"></i> Sections
+    </a>
+
+    <div style="padding:.75rem .9rem .6rem; font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; font-weight:700; color:#94a3b8;">
+      Scheduling
+    </div>
+    <a href="{% url 'dashboard:manage_timeslots' %}"
+       class="manage-link {% if manage_section == 'timeslots' %}active{% endif %}">
+      <i class="bi bi-clock-fill"></i> Time Slots
+    </a>
+    <a href="{% url 'dashboard:manage_timetables' %}"
+       class="manage-link {% if manage_section == 'timetables' %}active{% endif %}">
+      <i class="bi bi-table"></i> Timetables
+    </a>
+    <a href="{% url 'dashboard:employee_timetable_list' %}"
+       class="manage-link {% if manage_section == 'emp_timetable' %}active{% endif %}">
+      <i class="bi bi-person-lines-fill"></i> Employee TT
+    </a>
+
+    <div style="padding:.75rem .9rem .6rem; font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; font-weight:700; color:#94a3b8;">
+      Bookings
+    </div>
+    <a href="{% url 'dashboard:manage_bookings' %}"
+       class="manage-link {% if manage_section == 'bookings' %}active{% endif %}">
+      <i class="bi bi-calendar2-check-fill"></i> Room Bookings
+    </a>
+  </nav>
+
+  {# ── Main Content ───────────────────────────────────────────────── #}
+  <div class="flex-grow-1 p-4" style="min-width:0; padding-left:2.25rem !important;">
+    {% block manage_content %}{% endblock %}
+  </div>
+
+</div>
+
+{% endblock %}

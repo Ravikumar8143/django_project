@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Reject Booking #{{ booking.pk }}{% endblock %}
+{% block page_title %}Reject Booking #{{ booking.pk }}{% endblock %}
+
+{% block content %}
+
+<div class="mb-3">
+  <a href="{% url 'bookings:detail' booking.pk %}" class="text-decoration-none"
+     style="font-size:.82rem;color:var(--teal)">
+    <i class="ri-arrow-left-line me-1"></i>Back to Booking #{{ booking.pk }}
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+
+    <div class="card">
+      <div class="card-header">
+        <i class="ri-close-circle-line" style="color:#dc3545"></i>
+        <span>Reject Booking Request #{{ booking.pk }}</span>
+      </div>
+      <div class="card-body">
+
+        <!-- Summary -->
+        <div class="p-3 rounded mb-4" style="background:#f4f6f5;border:1px solid #d4e9e6">
+          {% include 'bookings/_summary_rows.html' with booking=booking %}
+        </div>
+
+        <!-- Warning banner -->
+        <div class="d-flex gap-2 align-items-start p-3 mb-4 rounded"
+             style="background:#fff0f0;border:1px solid #fca5a5;font-size:.82rem;color:#9b1c1c">
+          <i class="ri-error-warning-line mt-1" style="flex-shrink:0;font-size:1rem"></i>
+          <div>
+            <strong>You are about to reject this booking request.</strong> The requestor will be
+            notified. Please provide a clear reason so they can understand the decision.
+          </div>
+        </div>
+
+        <form method="post">
+          {% csrf_token %}
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold" style="font-size:.82rem">
+              {{ form.reason.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.reason }}
+            {% if form.reason.errors %}
+            <div class="text-danger" style="font-size:.75rem">{{ form.reason.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">{{ form.reason.help_text }}</div>
+          </div>
+
+          <div class="d-flex gap-3 pt-2" style="border-top:1px solid #e2eeec">
+            <button type="submit" class="btn btn-danger px-4 d-flex align-items-center gap-2">
+              <i class="ri-close-circle-line"></i>Confirm Rejection
+            </button>
+            <a href="{% url 'bookings:detail' booking.pk %}" class="btn btn-outline-secondary px-4">
+              Go Back
+            </a>
+            <a href="{% url 'bookings:approve' booking.pk %}" class="btn btn-outline-success ms-auto d-flex align-items-center gap-2">
+              <i class="ri-checkbox-circle-line"></i>Approve Instead
+            </a>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

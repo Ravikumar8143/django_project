@@ -1,0 +1,359 @@
+{% extends 'base.html' %}
+{% block title %}Room Booking Calendar{% endblock %}
+{% block page_title %}Room Availability Calendar{% endblock %}
+{% block nav_bookings %}active{% endblock %}
+
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/bookings.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<!-- Page header -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h5 class="fw-bold mb-0" style="color:var(--teal-dark)">
+      <i class="ri-calendar-2-line me-2" style="color:var(--teal)"></i>Room Availability Calendar
+    </h5>
+    <small class="text-muted">Select any weekday to see the full room-by-slot availability grid</small>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'bookings:list' %}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
+      <i class="ri-list-check-2"></i>All Bookings
+    </a>
+    {% if user.role != 'student' %}
+    <a href="{% url 'bookings:create' %}" class="btn btn-primary btn-sm d-flex align-items-center gap-1">
+      <i class="ri-add-line"></i>New Request
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="cal-wrap">
+
+  <!-- ── Left: Month calendar ──────────────────────────────────────── -->
+  <div>
+    <div class="month-card">
+
+      <!-- Month nav header -->
+      <div class="month-header">
+        <a class="month-nav"
+           href="?year={{ prev_month.year }}&month={{ prev_month.month }}&date={{ selected_date }}">
+          <i class="ri-arrow-left-s-line"></i>
+        </a>
+        <span class="month-title">{{ month_label }}</span>
+        <a class="month-nav"
+           href="?year={{ next_month.year }}&month={{ next_month.month }}&date={{ selected_date }}">
+          <i class="ri-arrow-right-s-line"></i>
+        </a>
+      </div>
+
+      <!-- Day-of-week headers -->
+      <div style="padding: .5rem .6rem 0">
+        <table class="cal-table">
+          <thead>
+            <tr>
+              {% for name in weekday_names %}
+              <th>{{ name }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for week in cal_weeks %}
+            <tr>
+              {% for day in week %}
+              <td class="cal-day">
+                {% if day == 0 %}
+                <span class="day-btn other">00</span>
+                {% else %}
+                  <a class="day-btn
+                      {% if day == today.day and month == today.month and year == today.year %}today{% endif %}
+                      {% if day == selected_date.day and month == selected_date.month and year == selected_date.year %}selected{% endif %}"
+                     data-day="{{ day }}"
+                     href="?year={{ year }}&month={{ month }}&date={{ year }}-{% if month < 10 %}0{% endif %}{{ month }}-{% if day < 10 %}0{% endif %}{{ day }}">
+                    {{ day }}
+                    <span class="dot-row"></span>
+                  </a>
+                {% endif %}
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend-row mt-1">
+        <div class="legend-item">
+          <span class="legend-box" style="background:#e6f4f2;border:1px solid #9ccfca"></span>Available
+        </div>
+        <div class="legend-item">
+          <span class="legend-box" style="background:#fee2e2;border:1px solid #fca5a5"></span>Booked
+        </div>
+        <div class="legend-item">
+          <span class="legend-box" style="background:#fff8e8;border:1px solid #e8c57a"></span>Pending
+        </div>
+        <div class="legend-item">
+          <span class="legend-box" style="background:#f1f5f9;border:1px solid #e2e8f0"></span>Unavailable
+        </div>
+      </div>
+
+      <!-- Calendar dots key -->
+      <div class="px-3 pb-3 pt-1" style="font-size:.68rem;color:#6b8c87;border-top:1px solid #edf4f3">
+        <span class="d-flex align-items-center gap-1 mt-1">
+          <span class="dot dot-approved" style="display:inline-block"></span>Approved bookings on that day
+        </span>
+        <span class="d-flex align-items-center gap-1 mt-1">
+          <span class="dot dot-pending" style="display:inline-block"></span>Pending requests on that day
+        </span>
+      </div>
+    </div>
+
+    <!-- Quick jump to today -->
+    {% if selected_date != today %}
+    <div class="text-center mt-2">
+      <a href="?year={{ today.year }}&month={{ today.month }}&date={{ today }}"
+         class="btn btn-sm btn-outline-secondary w-100">
+        <i class="ri-calendar-today-line me-1"></i>Jump to Today
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Right: Day availability grid ─────────────────────────────── -->
+  <div>
+
+    <!-- Day stats strip -->
+    <div class="day-stats mb-3">
+      <div class="day-stat">
+        <div class="ds-num">{{ stats.total }}</div>
+        <div class="ds-lbl">Total Rooms</div>
+      </div>
+      <div class="day-stat" style="border-top:3px solid #9ccfca">
+        <div class="ds-num" style="color:#005a50">{{ stats.available }}</div>
+        <div class="ds-lbl">Available</div>
+      </div>
+      <div class="day-stat" style="border-top:3px solid #fca5a5">
+        <div class="ds-num" style="color:#991b1b">{{ stats.booked }}</div>
+        <div class="ds-lbl">Booked</div>
+      </div>
+      <div class="day-stat" style="border-top:3px solid #e8c57a">
+        <div class="ds-num" style="color:#7a5a1a">{{ stats.pending }}</div>
+        <div class="ds-lbl">Pending</div>
+      </div>
+    </div>
+
+    <!-- Grid card -->
+    <div class="grid-card">
+      <div class="grid-header">
+        <div>
+          <div class="grid-date">
+            <i class="ri-calendar-check-line me-2" style="color:var(--gold)"></i>
+            {{ selected_date|date:"l, d F Y" }}
+          </div>
+          <div class="grid-sub">
+            {{ grid_rows|length }} room{{ grid_rows|length|pluralize }} &bull;
+            {{ slot_header_pairs|length }} teaching slots
+            {% if selected_date.weekday > 4 %}
+            &bull; <span style="color:var(--gold)">Weekend — no classes scheduled</span>
+            {% endif %}
+          </div>
+        </div>
+        <!-- Print button -->
+        <button onclick="window.print()" class="month-nav" title="Print">
+          <i class="ri-printer-line"></i>
+        </button>
+      </div>
+
+      {% if selected_date.weekday > 4 %}
+      <!-- Weekend message -->
+      <div class="text-center py-5 text-muted">
+        <i class="ri-moon-line" style="font-size:2.5rem;display:block;margin-bottom:.75rem;color:#b3cdc9"></i>
+        <div class="fw-semibold">No classes on weekends</div>
+        <small>Select a weekday (Monday–Friday) to view room availability.</small>
+      </div>
+
+      {% elif not grid_rows %}
+      <div class="text-center py-5 text-muted">
+        <i class="ri-building-2-line" style="font-size:2.5rem;display:block;margin-bottom:.75rem;color:#b3cdc9"></i>
+        <div class="fw-semibold">No rooms found in the system</div>
+      </div>
+
+      {% else %}
+      <div class="avail-grid">
+        <table class="avail-table">
+          <thead>
+            <tr>
+              <th style="background:#fff;border-bottom:2px solid #e2eeec;text-align:left;
+                         padding:.5rem .85rem;position:sticky;left:0;z-index:3">
+                Room
+              </th>
+              {% for sn, stime in slot_header_pairs %}
+              <th class="slot-head">
+                Slot {{ sn }}<br>
+                <span style="font-weight:400;font-size:.58rem;opacity:.8">{{ stime }}</span>
+              </th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in grid_rows %}
+            <tr>
+              <!-- Room name -->
+              <td class="room-name-cell">
+                <div class="rn-id">{{ row.room.room_id }}</div>
+                <div class="rn-sub">
+                  {{ row.room.get_room_type_display }} &bull;
+                  Cap: {{ row.room.seating_capacity }}
+                </div>
+                <div class="rn-sub">{{ row.room.building.code }}</div>
+              </td>
+
+              <!-- Slot cells -->
+              {% for cell in row.cells %}
+              <td class="slot-cell {% if cell.booking %}clickable{% endif %}"
+                  {% if cell.booking %}
+                  data-bs-toggle="modal"
+                  data-bs-target="#bookingDetailModal"
+                  data-bk-pk="{{ cell.booking.pk }}"
+                  data-bk-purpose="{{ cell.booking.get_purpose_display }}"
+                  data-bk-requester="{{ cell.booking.requested_by.get_full_name|default:cell.booking.requested_by.username|default:'System' }}"
+                  data-bk-room="{{ cell.booking.assigned_room.room_id|default:'—' }}"
+                  data-bk-status="{{ cell.status }}"
+                  data-bk-slot="Slot {{ cell.slot }} ({{ cell.time }})"
+                  data-bk-room-label="{{ row.room.room_id }}"
+                  data-bk-date="{{ selected_date|date:'d M Y' }}"
+                  {% endif %}>
+
+                {% if cell.status == 'available' %}
+                <span class="slot-pill s-available">
+                  <i class="ri-checkbox-circle-line"></i>
+                  <span>Available</span>
+                </span>
+
+                {% elif cell.status == 'approved' %}
+                <span class="slot-pill s-approved">
+                  <i class="ri-lock-fill"></i>
+                  <span>{{ cell.booking.get_purpose_display|truncatechars:12 }}</span>
+                </span>
+
+                {% elif cell.status == 'pending' %}
+                <span class="slot-pill s-pending">
+                  <i class="ri-time-line"></i>
+                  <span>Pending</span>
+                </span>
+
+                {% else %}
+                <span class="slot-pill s-unavailable">
+                  <i class="ri-forbid-line"></i>
+                  <span>N/A</span>
+                </span>
+                {% endif %}
+
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Booking Detail Modal ───────────────────────────────────── -->
+<div class="modal fade" id="bookingDetailModal" tabindex="-1" aria-labelledby="bookingDetailLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-0 pb-1" id="bookingDetailHeader">
+        <h6 class="modal-title fw-bold" id="bookingDetailLabel">
+          <i class="ri-lock-fill me-2"></i>Slot Booking Detail
+        </h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <table class="table table-sm table-borderless mb-0" style="font-size:.84rem">
+          <tr><td class="text-muted" style="width:90px">Room</td>      <td class="fw-semibold" id="md-room">—</td></tr>
+          <tr><td class="text-muted">Date</td>      <td id="md-date">—</td></tr>
+          <tr><td class="text-muted">Slot</td>      <td id="md-slot">—</td></tr>
+          <tr><td class="text-muted">Purpose</td>   <td id="md-purpose">—</td></tr>
+          <tr><td class="text-muted">Requested by</td><td id="md-requester">—</td></tr>
+          <tr><td class="text-muted">Status</td>    <td id="md-status">—</td></tr>
+        </table>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        <a id="md-link" href="#" class="btn btn-sm btn-primary">
+          <i class="ri-external-link-line me-1"></i>View Full Detail
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Inject booking dot data as JSON -->
+<script>
+const dotData = {
+  {% for date, counts in date_dots.items %}
+  "{{ date|date:'Y-m-d' }}": { pending: {{ counts.pending }}, approved: {{ counts.approved }} },
+  {% endfor %}
+};
+
+// Render dots onto each calendar day button
+document.querySelectorAll('[data-day]').forEach(btn => {
+  const a     = btn.closest('a') || btn;
+  const href  = a.getAttribute('href') || '';
+  const match = href.match(/date=(\d{4}-\d{2}-\d{2})/);
+  if (!match) return;
+  const key    = match[1];
+  const counts = dotData[key];
+  const dotRow = a.querySelector('.dot-row');
+  if (!dotRow) return;
+  if (counts) {
+    if (counts.approved > 0)
+      dotRow.innerHTML += `<span class="dot dot-approved" title="${counts.approved} approved"></span>`;
+    if (counts.pending > 0)
+      dotRow.innerHTML += `<span class="dot dot-pending" title="${counts.pending} pending"></span>`;
+  }
+});
+
+// Booked/pending cell click → populate and open modal
+const bkModal = document.getElementById('bookingDetailModal');
+if (bkModal) {
+  bkModal.addEventListener('show.bs.modal', function (e) {
+    const cell    = e.relatedTarget;
+    const status  = cell.dataset.bkStatus || '';
+    const header  = document.getElementById('bookingDetailHeader');
+
+    // Colour header by status
+    header.style.background = status === 'approved' ? '#991b1b' : '#7a5a1a';
+    header.style.color      = '#fff';
+
+    document.getElementById('md-room').textContent      = cell.dataset.bkRoomLabel || '—';
+    document.getElementById('md-date').textContent      = cell.dataset.bkDate      || '—';
+    document.getElementById('md-slot').textContent      = cell.dataset.bkSlot      || '—';
+    document.getElementById('md-purpose').textContent   = cell.dataset.bkPurpose   || '—';
+    document.getElementById('md-requester').textContent = cell.dataset.bkRequester  || '—';
+    document.getElementById('md-status').textContent    =
+      status === 'approved' ? 'Approved / Allocated' : 'Pending Approval';
+
+    const pk   = cell.dataset.bkPk;
+    const link = document.getElementById('md-link');
+    if (pk) {
+      link.href = '/bookings/' + pk + '/';
+      link.style.display = '';
+    } else {
+      link.style.display = 'none';
+    }
+  });
+}
+</script>
+{% endblock %}

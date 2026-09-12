@@ -1,0 +1,103 @@
+{% extends 'manage/layout.html' %}
+{% block title %}{{ title }} | Admin Panel{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block manage_content %}
+<div class="d-flex align-items-center gap-2 mb-4">
+  <a href="{{ back_url }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Back
+  </a>
+  <h5 class="mb-0 fw-bold" style="color:#007367">{{ title }}</h5>
+</div>
+
+{% if messages %}
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags }} alert-dismissible fade show py-2 mb-3" role="alert">
+  {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="card border-0 shadow-sm" style="max-width:600px">
+  <div class="card-body p-4">
+    <form method="post" novalidate id="campusForm">
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="id_university" style="font-size:.8rem">
+          University <span class="text-danger">*</span>
+        </label>
+        <select name="university" id="id_university" class="form-select{% if errors.university %} is-invalid{% endif %}">
+          <option value="">-- Select University --</option>
+          {% for uni in universities %}
+          <option value="{{ uni.id }}"{% if values.university|stringformat:"s" == uni.id|stringformat:"s" %} selected{% endif %}>
+            {{ uni.name }}
+          </option>
+          {% endfor %}
+        </select>
+        {% if errors.university %}<div class="invalid-feedback d-block">{{ errors.university }}</div>{% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="id_name" style="font-size:.8rem">
+          Campus Name <span class="text-danger">*</span>
+        </label>
+        <input type="text" name="name" id="id_name" class="form-control{% if errors.name %} is-invalid{% endif %}"
+               value="{{ values.name }}">
+        {% if errors.name %}<div class="invalid-feedback d-block">{{ errors.name }}</div>{% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="id_code" style="font-size:.8rem">
+          Code <span class="text-danger">*</span>
+        </label>
+        <input type="text" name="code" id="id_code" class="form-control{% if errors.code %} is-invalid{% endif %}"
+               value="{{ values.code }}">
+        {% if errors.code %}<div class="invalid-feedback d-block">{{ errors.code }}</div>{% endif %}
+      </div>
+
+      <hr class="my-4">
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary px-4" style="background:#007367;border-color:#007367">
+          <i class="bi bi-check-lg me-1"></i>{% if is_edit %}Save Changes{% else %}Create{% endif %}
+        </button>
+        <a href="{{ back_url }}" class="btn btn-outline-secondary px-4">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+$(function () {
+  $('#campusForm').on('submit', function (e) {
+    var errorMessages = [];
+    $(this).find('.is-invalid').removeClass('is-invalid');
+
+    if (!$('#id_university').val()) {
+      $('#id_university').addClass('is-invalid');
+      errorMessages.push('University is required.');
+    }
+    if (!$('#id_name').val().trim()) {
+      $('#id_name').addClass('is-invalid');
+      errorMessages.push('Campus name is required.');
+    }
+    if (!$('#id_code').val().trim()) {
+      $('#id_code').addClass('is-invalid');
+      errorMessages.push('Code is required.');
+    }
+
+    if (errorMessages.length) {
+      e.preventDefault();
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Please fix the following',
+          html: errorMessages.join('<br>'),
+          confirmButtonColor: '#007367',
+        });
+      }
+    }
+  });
+});
+</script>
+{% endblock %}

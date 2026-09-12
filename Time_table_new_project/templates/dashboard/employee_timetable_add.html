@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% block title %}Add Employee Timetable{% endblock %}
+{% block page_title %}Add Employee Timetable{% endblock %}
+{% block nav_admin_panel %}active{% endblock %}
+{% block nav_emp_tt %}active{% endblock %}
+
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/select2-theme.css' %}">
+<link rel="stylesheet" href="{% static 'css/components.css' %}">
+{% endblock %}
+
+{% block content %}
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags }} alert-dismissible fade show mb-3" role="alert">
+  {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+
+<span class="page-breadcrumb mb-3">
+  <i class="ri-group-2-line"></i>
+  <a href="{% url 'dashboard:employee_timetable_list' %}" style="color:inherit;text-decoration:none">Employee Timetable</a>
+  &rsaquo; Add Entry
+</span>
+
+<div class="row justify-content-center mt-3">
+  <div class="col-lg-9 col-xl-8">
+    <form method="post" id="addEmpTtForm">
+      {% csrf_token %}
+
+      <!-- Step 1: Select Employee -->
+      <div class="card border-0 mb-4">
+        <div class="card-header">
+          <i class="ri-user-search-line"></i> Step 1 — Select Employee
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              Employee <span class="text-danger">*</span>
+              <small class="text-muted fw-normal ms-1">(Teaching/Contract staff — emp_type TP or TC)</small>
+            </label>
+            <select id="empSelect" name="empid" required>
+              <option value=""></option>
+            </select>
+            <div class="form-text">Type at least 2 characters to search by name or employee ID</div>
+          </div>
+
+          <div id="empInfoBox" class="emp-info-box d-none">
+            <div class="row g-3">
+              <div class="col-sm-4">
+                <div class="info-label">Employee ID</div>
+                <div class="info-val" id="infoEmpid">—</div>
+              </div>
+              <div class="col-sm-8">
+                <div class="info-label">Full Name</div>
+                <div class="info-val" id="infoName">—</div>
+              </div>
+              <div class="col-sm-6">
+                <div class="info-label">Designation</div>
+                <div class="info-val" id="infoDesig">—</div>
+              </div>
+              <div class="col-sm-6">
+                <div class="info-label">Department</div>
+                <div class="info-val" id="infoDept">—</div>
+              </div>
+              <div class="col-sm-12">
+                <div class="info-label">Email</div>
+                <div class="info-val" id="infoEmail">—</div>
+              </div>
+            </div>
+          </div>
+
+          <input type="hidden" name="emp_name"    id="hEmpName">
+          <input type="hidden" name="designation" id="hDesig">
+          <input type="hidden" name="dept_name"   id="hDept">
+        </div>
+      </div>
+
+      <!-- Step 2: Subject & Section -->
+      <div class="card border-0 mb-4">
+        <div class="card-header">
+          <i class="ri-book-open-line"></i> Step 2 — Subject &amp; Section Details
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Subject Code <span class="text-danger">*</span></label>
+              <input type="text" name="subject_code" class="form-control" placeholder="e.g. CS301" required>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label fw-semibold">Subject Name</label>
+              <input type="text" name="subject_name" class="form-control" placeholder="e.g. Data Structures and Algorithms">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Section <span class="text-danger">*</span></label>
+              <input type="text" name="section" class="form-control" placeholder="e.g. A, B, DS-A" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Semester <span class="text-danger">*</span></label>
+              <select name="semester" class="form-select" required>
+                {% for s in semester_choices %}
+                <option value="{{ s }}">Semester {{ s }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Academic Year</label>
+              <select name="academic_year" class="form-select">
+                <option value="">— Select —</option>
+                {% for ay in academic_years %}
+                <option value="{{ ay.pk }}">{{ ay.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Date & Time Slot -->
+      <div class="card border-0 mb-4">
+        <div class="card-header">
+          <i class="ri-time-line"></i> Step 3 — Date &amp; Time Slot
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-5">
+              <label class="form-label fw-semibold">Scheduled Date</label>
+              <input type="date" name="scheduled_date" class="form-control">
+              <div class="form-text">Leave blank for recurring/weekly assignments</div>
+            </div>
+            <div class="col-md-7">
+              <label class="form-label fw-semibold">Time Slot</label>
+              <select name="time_slot" class="form-select">
+                <option value="">— Select time slot —</option>
+                {% for slot in slot_choices %}
+                <option value="{{ slot.id }}">{{ slot.label }}</option>
+                {% endfor %}
+              </select>
+              {% if not slot_choices %}
+              <div class="form-text text-warning">
+                <i class="ri-alert-line"></i> No teaching slots found. Please seed TimeSlot data first.
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Room Assignment -->
+      <div class="card border-0 mb-4">
+        <div class="card-header">
+          <i class="ri-building-2-line"></i> Step 4 — Room Assignment
+          <small class="fw-normal text-muted ms-1">(optional)</small>
+        </div>
+        <div class="card-body">
+          <label class="form-label fw-semibold">Room</label>
+          <select name="room" class="form-select">
+            <option value="">— No room assigned —</option>
+            {% for room in rooms %}
+            <option value="{{ room.pk }}">[{{ room.building.code }}] {{ room.room_id }} — {{ room.get_room_type_display }} (cap: {{ room.seating_capacity }})</option>
+            {% endfor %}
+          </select>
+          <div class="form-text">Only available rooms are listed.</div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center">
+        <a href="{% url 'dashboard:employee_timetable_list' %}" class="btn btn-outline-secondary">
+          <i class="ri-arrow-left-line me-1"></i>Cancel
+        </a>
+        <button type="submit" class="btn btn-primary px-4">
+          <i class="ri-save-line me-1"></i>Save Entry
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function ($) {
+  var SEARCH_URL = '{% url "dashboard:employee_search_ajax" %}';
+  var DETAIL_URL = '{% url "dashboard:employee_detail_ajax" %}';
+
+  function fmtResult(emp) {
+    if (!emp.id) { return emp.text || ''; }
+    var $d = $('<div class="s2-emp py-1"></div>');
+    $('<strong></strong>').text(emp.text).appendTo($d);
+    var parts = [];
+    if (emp.designation) parts.push(emp.designation);
+    if (emp.dept_name)   parts.push(emp.dept_name);
+    if (parts.length)    $('<small></small>').text(parts.join(' · ')).appendTo($d);
+    return $d;
+  }
+
+  $(function () {
+    if (typeof $.fn.select2 === 'undefined') {
+      console.warn('Select2 not loaded');
+      return;
+    }
+
+    $('#empSelect').select2({
+      placeholder: 'Search by name or employee ID…',
+      minimumInputLength: 2,
+      allowClear: true,
+      ajax: {
+        url: SEARCH_URL,
+        dataType: 'json',
+        delay: 300,
+        data: function (p) { return { q: p.term }; },
+        processResults: function (d) { return { results: d.results || [] }; },
+        cache: true
+      },
+      templateResult:    fmtResult,
+      templateSelection: function (e) { return e.text || e.id || ''; }
+    });
+
+    $('#empSelect').on('select2:select', function (e) {
+      var empid = e.params.data.id;
+      $.getJSON(DETAIL_URL, { empid: empid })
+        .done(function (d) {
+          $('#empInfoBox').removeClass('d-none');
+          $('#infoEmpid').text(d.empid       || '—');
+          $('#infoName').text(d.emp_name     || '—');
+          $('#infoDesig').text(d.designation || '—');
+          $('#infoDept').text(d.dept_name    || '—');
+          $('#infoEmail').text(d.emailid     || '—');
+          $('#hEmpName').val(d.emp_name    || '');
+          $('#hDesig').val(d.designation   || '');
+          $('#hDept').val(d.dept_name      || '');
+        })
+        .fail(function () { $('#empInfoBox').addClass('d-none'); });
+    });
+
+    $('#empSelect').on('select2:clear', function () {
+      $('#empInfoBox').addClass('d-none');
+      $('#hEmpName, #hDesig, #hDept').val('');
+    });
+  });
+}(jQuery));
+</script>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Coordinator Dashboard{% endblock %}
+{% block page_title %}Department Coordinator — Room Booking{% endblock %}
+{% block content %}
+{% if messages %}
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show" role="alert">
+  {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white fw-semibold border-0">
+        <i class="bi bi-calendar-plus me-2 text-warning"></i>My Booking Requests
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0" style="font-size:.83rem">
+          <thead class="table-light">
+            <tr><th>Date</th><th>Purpose</th><th>Room</th><th>Cross-Dept</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            {% for b in my_bookings %}
+            <tr>
+              <td>{{ b.booking_date }}</td>
+              <td>{{ b.get_purpose_display }}</td>
+              <td>{{ b.assigned_room|default:'—' }}</td>
+              <td>{% if b.is_cross_department %}<i class="bi bi-check text-success"></i>{% else %}—{% endif %}</td>
+              <td><span class="badge badge-{{ b.status|lower }} px-2" style="font-size:.7rem">{{ b.get_status_display }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-muted text-center py-3">No requests yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white fw-semibold border-0">
+        <i class="bi bi-building me-2 text-success"></i>Available Rooms
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0" style="font-size:.83rem">
+          <thead class="table-light">
+            <tr><th>Room</th><th>Type</th><th>Capacity</th><th>Building</th></tr>
+          </thead>
+          <tbody>
+            {% for room in available_rooms %}
+            <tr>
+              <td><strong>{{ room.room_id }}</strong></td>
+              <td>{{ room.get_room_type_display }}</td>
+              <td>{{ room.seating_capacity }}</td>
+              <td>{{ room.building.code }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-muted text-center py-3">No rooms available.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

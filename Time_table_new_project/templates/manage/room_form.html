@@ -1,0 +1,133 @@
+{% extends 'manage/layout.html' %}
+{% block title %}{{ title }} | Admin Panel{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block manage_content %}
+<div class="d-flex align-items-center gap-2 mb-4">
+  <a href="{{ back_url }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Back
+  </a>
+  <h5 class="mb-0 fw-bold" style="color:#007367">{{ title }}</h5>
+</div>
+
+{% if messages %}
+
+<div class="alert alert-{{ msg.tags }} alert-dismissible fade show py-2 mb-3" role="alert">
+  {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+
+{% endif %}
+
+<div class="card border-0 shadow-sm" style="max-width:600px">
+  <div class="card-body p-4">
+    <form method="post" novalidate id="roomForm">
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="id_building" style="font-size:.8rem">
+          Building <span class="text-danger">*</span>
+        </label>
+        <select name="building" id="id_building" class="form-select{% if errors.building %} is-invalid{% endif %}">
+          <option value="">-- Select Building --</option>
+          {% for b in buildings %}
+          <option value="{{ b.id }}"{% if values.building|stringformat:"s" == b.id|stringformat:"s" %} selected{% endif %}>
+            {{ b.name }}
+          </option>
+          {% endfor %}
+        </select>
+        {% if errors.building %}<div class="invalid-feedback d-block">{{ errors.building }}</div>{% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="id_room_id" style="font-size:.8rem">
+          Room ID <span class="text-danger">*</span>
+        </label>
+        <input type="text" name="room_id" id="id_room_id" class="form-control{% if errors.room_id %} is-invalid{% endif %}"
+               value="{{ values.room_id }}" placeholder="e.g. 6.2">
+        {% if errors.room_id %}<div class="invalid-feedback d-block">{{ errors.room_id }}</div>{% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="id_room_type" style="font-size:.8rem">
+          Room Type <span class="text-danger">*</span>
+        </label>
+        <select name="room_type" id="id_room_type" class="form-select{% if errors.room_type %} is-invalid{% endif %}">
+          <option value="">-- Select Type --</option>
+          {% for value, label in room_types %}
+          <option value="{{ value }}"{% if values.room_type == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        {% if errors.room_type %}<div class="invalid-feedback d-block">{{ errors.room_type }}</div>{% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="id_seating_capacity" style="font-size:.8rem">
+          Seating Capacity <span class="text-danger">*</span>
+        </label>
+        <input type="number" min="0" name="seating_capacity" id="id_seating_capacity"
+               class="form-control{% if errors.seating_capacity %} is-invalid{% endif %}"
+               value="{{ values.seating_capacity }}">
+        {% if errors.seating_capacity %}<div class="invalid-feedback d-block">{{ errors.seating_capacity }}</div>{% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="id_floor" style="font-size:.8rem">Floor</label>
+        <input type="text" name="floor" id="id_floor" class="form-control" value="{{ values.floor }}" placeholder="e.g. 2">
+      </div>
+
+      <div class="mb-3 form-check">
+        <input type="checkbox" name="is_available" id="id_is_available" class="form-check-input"
+               {% if values.is_available %}checked{% endif %}>
+        <label class="form-check-label" for="id_is_available" style="font-size:.85rem">Available for booking</label>
+      </div>
+
+      <hr class="my-4">
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary px-4" style="background:#007367;border-color:#007367">
+          <i class="bi bi-check-lg me-1"></i>{% if is_edit %}Save Changes{% else %}Create{% endif %}
+        </button>
+        <a href="{{ back_url }}" class="btn btn-outline-secondary px-4">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+$(function () {
+  $('#roomForm').on('submit', function (e) {
+    var errorMessages = [];
+    $(this).find('.is-invalid').removeClass('is-invalid');
+
+    if (!$('#id_building').val()) {
+      $('#id_building').addClass('is-invalid');
+      errorMessages.push('Building is required.');
+    }
+    if (!$('#id_room_id').val().trim()) {
+      $('#id_room_id').addClass('is-invalid');
+      errorMessages.push('Room ID is required.');
+    }
+    if (!$('#id_room_type').val()) {
+      $('#id_room_type').addClass('is-invalid');
+      errorMessages.push('Room type is required.');
+    }
+    var capacity = $('#id_seating_capacity').val().trim();
+    if (!capacity || !/^\d+$/.test(capacity)) {
+      $('#id_seating_capacity').addClass('is-invalid');
+      errorMessages.push('Seating capacity must be a whole number.');
+    }
+
+    if (errorMessages.length) {
+      e.preventDefault();
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Please fix the following',
+          html: errorMessages.join('<br>'),
+          confirmButtonColor: '#007367',
+        });
+      }
+    }
+  });
+});
+</script>
+{% endblock %}

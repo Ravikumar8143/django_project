@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block title %}Faculty Dashboard{% endblock %}
+{% block page_title %}My Teaching Schedule{% endblock %}
+{% block nav_faculty %}active{% endblock %}
+
+{% block content %}
+{% if messages %}
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show" role="alert">
+  {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+<div class="row g-3 mb-4">
+  {% include 'dashboard/_stat_card.html' with icon='bi-book-fill' color='#dbeafe' icon_color='#1d4ed8' label='Courses Assigned' value=stats.courses %}
+  {% include 'dashboard/_stat_card.html' with icon='bi-diagram-3' color='#d1fae5' icon_color='#065f46' label='Sections' value=stats.sections %}
+  {% include 'dashboard/_stat_card.html' with icon='bi-clock' color='#fef3c7' icon_color='#92400e' label='Pending Bookings' value=stats.pending_bookings %}
+</div>
+
+<div class="row g-3">
+  <!-- Weekly timetable grid -->
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white fw-semibold border-0">
+        <i class="bi bi-calendar-week me-2 text-primary"></i>My Weekly Timetable
+      </div>
+      <div class="card-body p-0 overflow-auto">
+        {% if timetable_entries %}
+        <table class="table tt-grid mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Day</th>
+              {% for n in "123456789"|make_list %}
+              {% if n != '6' %}<th>Slot {{ n }}</th>{% endif %}
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% regroup timetable_entries by time_slot.get_day_display as by_day %}
+            {% for day_group in by_day %}
+            <tr>
+              <td class="fw-semibold text-nowrap">{{ day_group.grouper }}</td>
+              {% for slot_num in "1234578 9"|make_list %}
+              <td>
+                {% for e in day_group.list %}
+                  {% if e.time_slot.slot_number == slot_num|add:"0" %}
+                  <span class="tt-cell {% if 'P-' in e.session_prefix or 'TP' in e.session_prefix %}lab{% endif %}">
+                    {{ e.display_label }}<br>
+                    <small class="text-muted">{{ e.room.room_id }}</small>
+                  </span>
+                  {% endif %}
+                {% endfor %}
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="text-center text-muted py-5">
+          <i class="bi bi-calendar-x fs-2 d-block mb-2"></i>No timetable entries found for the published timetable.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Teaching assignments -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white fw-semibold border-0">
+        <i class="bi bi-book me-2 text-success"></i>Teaching Assignments
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm mb-0" style="font-size:.82rem">
+            <thead class="table-light">
+              <tr><th>Course</th><th>Section</th><th>Type</th><th>Prefix</th></tr>
+            </thead>
+            <tbody>
+              {% for a in assignments %}
+              <tr>
+                <td>
+                  <div class="fw-semibold">{{ a.course.code }}</div>
+                  <small class="text-muted">{{ a.course.title|truncatechars:30 }}</small>
+                </td>
+                <td>{{ a.section.name }}</td>
+                <td><span class="badge bg-secondary" style="font-size:.7rem">{{ a.course.session_type }}</span></td>
+                <td><code style="font-size:.78rem">{{ a.session_prefix }}</code></td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-muted text-center py-3">No assignments.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- My bookings -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white fw-semibold border-0">
+        <i class="bi bi-calendar-plus me-2 text-warning"></i>My Room Booking Requests
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm mb-0" style="font-size:.82rem">
+            <thead class="table-light">
+              <tr><th>Date</th><th>Purpose</th><th>Room</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {% for b in my_bookings %}
+              <tr>
+                <td>{{ b.booking_date }}</td>
+                <td>{{ b.get_purpose_display }}</td>
+                <td>{{ b.assigned_room|default:'—' }}</td>
+                <td>
+                  <span class="badge badge-{{ b.status|lower }} px-2" style="font-size:.7rem">
+                    {{ b.get_status_display }}
+                  </span>
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-muted text-center py-3">No booking requests.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

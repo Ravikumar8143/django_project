@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Signed In</title>
+  <link rel="stylesheet" href="https://cdn.gitam.edu/vendor/bootstrap-5.2.3/css/bootstrap.min.css">
+</head>
+<body style="background:#f4f6f5">
+  <div class="container py-5" style="max-width:560px">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+
+        <h4 class="mb-3">Login successful</h4>
+        <dl class="row mb-4">
+          <dt class="col-sm-4">Username</dt><dd class="col-sm-8">{{ user.username }}</dd>
+          <dt class="col-sm-4">Full name</dt><dd class="col-sm-8">{{ user.get_full_name|default:"-" }}</dd>
+          <dt class="col-sm-4">Email</dt><dd class="col-sm-8">{{ user.email|default:"-" }}</dd>
+          <dt class="col-sm-4">Employee ID</dt><dd class="col-sm-8">{{ user.emp_id|default:"-" }}</dd>
+          <dt class="col-sm-4">Role</dt>
+          <dd class="col-sm-8">
+            {% if user.role %}
+              <span class="badge bg-primary">{{ user.get_role_display }}</span>
+            {% else %}
+              <span class="text-muted">No active role/membership assigned</span>
+            {% endif %}
+          </dd>
+        </dl>
+
+        <form method="post" action="{% url 'accounts:logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-danger">Logout</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

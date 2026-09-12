@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}System Admin Dashboard{% endblock %}
+{% block nav_admin_panel %}active{% endblock %}
+
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show" role="alert">
+  {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+<!-- Stats row -->
+<div class="row g-3 mb-4">
+  {% with s=stats %}
+  {% include 'dashboard/_stat_card.html' with icon='bi-people-fill' color='#dbeafe' icon_color='#1d4ed8' label='Total Users' value=s.total_users %}
+  {% include 'dashboard/_stat_card.html' with icon='bi-book-fill' color='#d1fae5' icon_color='#065f46' label='Courses' value=s.total_courses %}
+  {% include 'dashboard/_stat_card.html' with icon='bi-building' color='#fef3c7' icon_color='#92400e' label='Rooms' value=s.total_rooms %}
+  {% include 'dashboard/_stat_card.html' with icon='bi-diagram-3-fill' color='#ede9fe' icon_color='#5b21b6' label='Sections' value=s.total_sections %}
+  {% include 'dashboard/_stat_card.html' with icon='bi-table' color='#ecfdf5' icon_color='#065f46' label='Timetables' value=s.timetables %}
+  {% include 'dashboard/_stat_card.html' with icon='bi-clock-history' color='#fee2e2' icon_color='#991b1b' label='Pending Bookings' value=s.pending_bookings %}
+  {% endwith %}
+</div>
+
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white fw-semibold border-0">
+        <i class="bi bi-person-badge me-2 text-primary"></i>Users by Role
+      </div>
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+          {% for r in users_by_role %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span class="text-capitalize">{{ r.role }}</span>
+            <span class="badge bg-primary rounded-pill">{{ r.count }}</span>
+          </li>
+          {% empty %}
+          <li class="list-group-item text-muted">No users yet</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="card-footer bg-white border-0 text-center">
+        <a href="{% url 'dashboard:manage_users' %}" class="btn btn-sm btn-outline-primary">Manage Users</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white fw-semibold border-0 d-flex justify-content-between">
+        <span><i class="bi bi-clipboard2-check me-2 text-warning"></i>Recent Booking Requests</span>
+        <a href="{% url 'dashboard:manage_bookings' %}" class="btn btn-xs btn-outline-secondary btn-sm">View All</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table id="recentBookingsTable" class="table table-hover mb-0" style="font-size:.83rem">
+            <thead class="table-light">
+              <tr><th>Requestor</th><th>Date</th><th>Purpose</th><th>Room</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {% for b in recent_bookings %}
+              <tr>
+                <td>{{ b.requested_by.get_full_name|default:b.requested_by.username }}</td>
+                <td>{{ b.booking_date }}</td>
+                <td>{{ b.get_purpose_display }}</td>
+                <td>{{ b.assigned_room|default:'—' }}</td>
+                <td><span class="badge badge-{{ b.status|lower }} px-2 py-1" style="font-size:.72rem">{{ b.get_status_display }}</span></td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="5" class="text-center text-muted py-3">No booking requests yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Management Panel Quick Links -->
+<div class="card border-0 shadow-sm mt-3">
+  <div class="card-header bg-white fw-semibold border-0">
+    <i class="bi bi-grid-3x3-gap me-2" style="color:#007367"></i>Management Panel
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      {% for icon,label,url in quick_links %}
+      <div class="col-6 col-sm-4 col-md-2">
+        <a href="{{ url }}" class="manage-quick-card">
+          <i class="bi {{ icon }}"></i>
+          <span>{{ label }}</span>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof $.fn.DataTable !== 'undefined') {
+    $('#recentBookingsTable').DataTable({
+      pageLength: 10,
+      order: [],
+      language: { search: 'Search:', lengthMenu: 'Show _MENU_ rows' },
+    });
+  }
+});
+</script>
+{% endblock %}

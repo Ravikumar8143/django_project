@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+{% block title %}Edit Employee Timetable{% endblock %}
+{% block page_title %}Edit Employee Timetable{% endblock %}
+{% block nav_admin_panel %}active{% endblock %}
+{% block nav_emp_tt %}active{% endblock %}
+
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/select2-theme.css' %}">
+<link rel="stylesheet" href="{% static 'css/components.css' %}">
+{% endblock %}
+
+{% block content %}
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags }} alert-dismissible fade show mb-3" role="alert">
+  {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+
+<span class="page-breadcrumb mb-3">
+  <i class="ri-group-2-line"></i>
+  <a href="{% url 'dashboard:employee_timetable_list' %}" style="color:inherit;text-decoration:none">Employee Timetable</a>
+  &rsaquo; Edit Entry #{{ entry.pk }}
+</span>
+
+<div class="row justify-content-center mt-3">
+  <div class="col-lg-9 col-xl-8">
+    <form method="post" id="editEmpTtForm">
+      {% csrf_token %}
+
+      <!-- ── Employee ─────────────────────────────────────────────── -->
+      <div class="card border-0 mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="ri-user-line"></i> Employee</span>
+          <span class="swap-badge">
+            <i class="ri-swap-line"></i> Search below to swap employee
+          </span>
+        </div>
+        <div class="card-body">
+
+          <!-- Current employee info (always visible) -->
+          <div class="emp-info-box mb-3" id="currentEmpBox">
+            <div class="row g-3">
+              <div class="col-sm-3">
+                <div class="info-label">Employee ID</div>
+                <div class="info-val">{{ entry.empid|default:"—" }}</div>
+              </div>
+              <div class="col-sm-9">
+                <div class="info-label">Full Name</div>
+                <div class="info-val">
+                  <input type="text" name="emp_name" class="form-control form-control-sm"
+                         value="{{ entry.emp_name }}" placeholder="Faculty name">
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="info-label">Designation</div>
+                <div class="info-val">
+                  <input type="text" name="designation" class="form-control form-control-sm"
+                         value="{{ entry.designation }}" placeholder="Designation">
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="info-label">Department</div>
+                <div class="info-val">
+                  <input type="text" name="dept_name" class="form-control form-control-sm"
+                         value="{{ entry.dept_name }}" placeholder="Department">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Swap employee via Select2 -->
+          <div class="mb-2">
+            <label class="form-label fw-semibold" style="font-size:.82rem">
+              <i class="ri-user-search-line me-1"></i>Swap Employee
+              <small class="text-muted fw-normal ms-1">(type to search; leave blank to keep current)</small>
+            </label>
+            <select id="empSwapSelect" name="empid">
+              <option value="">— Keep current employee —</option>
+              {% if entry.empid %}
+              <option value="{{ entry.empid }}" selected>{{ entry.emp_name }} ({{ entry.empid }})</option>
+              {% endif %}
+            </select>
+          </div>
+
+          <!-- Hidden passthrough fields (populated when new employee selected) -->
+          <input type="hidden" id="hSwapName"  name="_swap_emp_name">
+          <input type="hidden" id="hSwapDesig" name="_swap_designation">
+          <input type="hidden" id="hSwapDept"  name="_swap_dept_name">
+
+          <!-- Preview box for newly selected employee -->
+          <div id="swapPreviewBox" class="emp-info-box d-none mt-2" style="background:#fff8e1;border-color:#ffc107">
+            <div class="row g-2">
+              <div class="col-sm-3">
+                <div class="info-label">New Emp ID</div>
+                <div class="info-val" id="swapEmpid">—</div>
+              </div>
+              <div class="col-sm-9">
+                <div class="info-label">Name</div>
+                <div class="info-val" id="swapName">—</div>
+              </div>
+              <div class="col-sm-6">
+                <div class="info-label">Designation</div>
+                <div class="info-val" id="swapDesig">—</div>
+              </div>
+              <div class="col-sm-6">
+                <div class="info-label">Department</div>
+                <div class="info-val" id="swapDept">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Subject & Section ────────────────────────────────────── -->
+      <div class="card border-0 mb-4">
+        <div class="card-header">
+          <i class="ri-book-open-line"></i> Subject &amp; Section
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Subject Code <span class="text-danger">*</span></label>
+              <input type="text" name="subject_code" class="form-control"
+                     value="{{ entry.subject_code }}" required>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label fw-semibold">Subject Name</label>
+              <input type="text" name="subject_name" class="form-control"
+                     value="{{ entry.subject_name }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Section <span class="text-danger">*</span></label>
+              <input type="text" name="section" class="form-control"
+                     value="{{ entry.section }}" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Semester <span class="text-danger">*</span></label>
+              <select name="semester" class="form-select" required>
+                {% for s in semester_choices %}
+                <option value="{{ s }}" {% if s == entry.semester %}selected{% endif %}>Semester {{ s }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Academic Year</label>
+              <select name="academic_year" class="form-select">
+                <option value="">— Select —</option>
+                {% for ay in academic_years %}
+                <option value="{{ ay.pk }}" {% if entry.academic_year_id == ay.pk %}selected{% endif %}>
+                  {{ ay.label }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Date & Time Slot ─────────────────────────────────────── -->
+      <div class="card border-0 mb-4">
+        <div class="card-header">
+          <i class="ri-time-line"></i> Date &amp; Time Slot
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-5">
+              <label class="form-label fw-semibold">Scheduled Date</label>
+              <input type="date" name="scheduled_date" class="form-control"
+                     value="{{ entry.scheduled_date|date:'Y-m-d'|default:'' }}">
+            </div>
+            <div class="col-md-7">
+              <label class="form-label fw-semibold">Time Slot</label>
+              <select name="time_slot" class="form-select">
+                <option value="">— No slot assigned —</option>
+                {% for slot in slot_choices %}
+                <option value="{{ slot.id }}"
+                  {% if entry.time_slot_id == slot.id %}selected{% endif %}>
+                  {{ slot.label }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Room Assignment ──────────────────────────────────────── -->
+      <div class="card border-0 mb-4">
+        <div class="card-header">
+          <i class="ri-building-2-line"></i> Room Assignment
+        </div>
+        <div class="card-body">
+          <label class="form-label fw-semibold">Room</label>
+          <select name="room" class="form-select">
+            <option value="">— No room assigned —</option>
+            {% for room in rooms %}
+            <option value="{{ room.pk }}"
+              {% if entry.room_id == room.pk %}selected{% endif %}>
+              [{{ room.building.code }}] {{ room.room_id }} — {{ room.get_room_type_display }} (cap: {{ room.seating_capacity }})
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center">
+        <a href="{% url 'dashboard:employee_timetable_list' %}" class="btn btn-outline-secondary">
+          <i class="ri-arrow-left-line me-1"></i>Cancel
+        </a>
+        <button type="submit" class="btn btn-primary px-4">
+          <i class="ri-save-line me-1"></i>Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function ($) {
+  var SEARCH_URL = '{% url "dashboard:employee_search_ajax" %}';
+  var DETAIL_URL = '{% url "dashboard:employee_detail_ajax" %}';
+
+  function fmtResult(emp) {
+    if (!emp.id) { return emp.text || ''; }
+    var $d = $('<div class="s2-emp py-1"></div>');
+    $('<strong></strong>').text(emp.text).appendTo($d);
+    var parts = [];
+    if (emp.designation) parts.push(emp.designation);
+    if (emp.dept_name)   parts.push(emp.dept_name);
+    if (parts.length)    $('<small></small>').text(parts.join(' · ')).appendTo($d);
+    return $d;
+  }
+
+  $(function () {
+    if (typeof $.fn.select2 === 'undefined') return;
+
+    $('#empSwapSelect').select2({
+      placeholder: 'Type name or employee ID to swap…',
+      minimumInputLength: 2,
+      allowClear: true,
+      ajax: {
+        url: SEARCH_URL,
+        dataType: 'json',
+        delay: 300,
+        data: function (p) { return { q: p.term }; },
+        processResults: function (d) { return { results: d.results || [] }; },
+        cache: true
+      },
+      templateResult:    fmtResult,
+      templateSelection: function (e) { return e.text || e.id || ''; }
+    });
+
+    $('#empSwapSelect').on('select2:select', function (e) {
+      var data  = e.params.data;
+      var empid = data.id || '';
+      // If empid is a __name__ sentinel the search result already has all fields
+      if (empid.startsWith('__name__') || data.emp_name) {
+        var name  = data.emp_name  || data.text || '';
+        var desig = data.designation || '';
+        var dept  = data.dept_name   || '';
+        var realId = data.empid || '';
+        $('#swapPreviewBox').removeClass('d-none');
+        $('#swapEmpid').text(realId || '—');
+        $('#swapName').text(name   || '—');
+        $('#swapDesig').text(desig || '—');
+        $('#swapDept').text(dept   || '—');
+        $('#hSwapName').val(name);
+        $('#hSwapDesig').val(desig);
+        $('#hSwapDept').val(dept);
+        // Override the select value to real empid (or blank if none)
+        // so the form posts the correct empid
+        var $sel = $('#empSwapSelect');
+        if (realId && realId !== empid) {
+          // Rebuild option with real empid
+          var opt = new Option(data.text, realId, true, true);
+          $sel.empty().append(opt).trigger('change');
+        }
+        return;
+      }
+      $.getJSON(DETAIL_URL, { empid: empid })
+        .done(function (d) {
+          $('#swapPreviewBox').removeClass('d-none');
+          $('#swapEmpid').text(d.empid       || '—');
+          $('#swapName').text(d.emp_name     || '—');
+          $('#swapDesig').text(d.designation || '—');
+          $('#swapDept').text(d.dept_name    || '—');
+          $('#hSwapName').val(d.emp_name    || '');
+          $('#hSwapDesig').val(d.designation || '');
+          $('#hSwapDept').val(d.dept_name   || '');
+        })
+        .fail(function () { $('#swapPreviewBox').addClass('d-none'); });
+    });
+
+    $('#empSwapSelect').on('select2:clear', function () {
+      $('#swapPreviewBox').addClass('d-none');
+      $('#hSwapName, #hSwapDesig, #hSwapDept').val('');
+    });
+  });
+}(jQuery));
+</script>
+{% endblock %}

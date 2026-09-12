@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}HOI Dashboard{% endblock %}
+{% block page_title %}Head of Institute — Booking Approvals{% endblock %}
+{% block nav_hoi %}active{% endblock %}
+
+{% block content %}
+{% if messages %}
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show" role="alert">
+  {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+<div class="row g-3 mb-4">
+  {% include 'dashboard/_stat_card.html' with icon='bi-hourglass-split' color='#fef3c7' icon_color='#92400e' label='Pending Requests' value=stats.pending %}
+  {% include 'dashboard/_stat_card.html' with icon='bi-check2-circle' color='#d1fae5' icon_color='#065f46' label='Approved Today' value=stats.approved_today %}
+  {% include 'dashboard/_stat_card.html' with icon='bi-building' color='#dbeafe' icon_color='#1d4ed8' label='Available Rooms' value=stats.total_rooms %}
+  {% include 'dashboard/_stat_card.html' with icon='bi-arrow-left-right' color='#ede9fe' icon_color='#5b21b6' label='Cross-Dept Pending' value=stats.cross_dept %}
+</div>
+
+<!-- Pending Requests -->
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white fw-semibold border-0">
+    <i class="bi bi-clipboard2-pulse me-2 text-warning"></i>
+    Pending Booking Requests <span class="badge bg-warning text-dark ms-1">{{ pending_count }}</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0" style="font-size:.83rem">
+        <thead class="table-light">
+          <tr>
+            <th>#</th><th>Requestor</th><th>Dept</th><th>Date</th>
+            <th>Slots</th><th>Purpose</th><th>Room Pref.</th>
+            <th>Cross-Dept?</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for req in pending_requests %}
+          <tr>
+            <td class="text-muted">{{ req.pk }}</td>
+            <td><strong>{{ req.requested_by.get_full_name|default:req.requested_by.username }}</strong></td>
+            <td>{{ req.department.code|default:'—' }}</td>
+            <td>{{ req.booking_date }}</td>
+            <td>
+              {% for ts in req.time_slots.all %}
+              <span class="badge bg-secondary me-1" style="font-size:.7rem">{{ ts.slot_id }}</span>
+              {% endfor %}
+            </td>
+            <td>{{ req.get_purpose_display }}</td>
+            <td>{{ req.preferred_room|default:'Any' }}</td>
+            <td>
+              {% if req.is_cross_department %}
+              <span class="badge bg-purple text-white" style="background:#7c3aed!important">Cross-Dept</span>
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              <form method="post" action="{% url 'dashboard:approve_booking' req.pk %}" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="reason" value="Approved by HOI">
+                <button type="submit" class="btn btn-xs btn-success btn-sm py-0 px-2">
+                  <i class="bi bi-check-lg"></i> Approve
+                </button>
+              </form>
+              <form method="post" action="{% url 'dashboard:reject_booking' req.pk %}" class="d-inline ms-1">
+                {% csrf_token %}
+                <input type="hidden" name="reason" value="Rejected by HOI">
+                <button type="submit" class="btn btn-xs btn-danger btn-sm py-0 px-2"
+                        onclick="return confirm('Reject this request?')">
+                  <i class="bi bi-x-lg"></i> Reject
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="9" class="text-center text-muted py-4">
+            <i class="bi bi-check2-all fs-3 text-success d-block mb-2"></i>
+            All requests have been processed.
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Recent decisions -->
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-white fw-semibold border-0">
+    <i class="bi bi-clock-history me-2 text-secondary"></i>My Recent Decisions
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm mb-0" style="font-size:.82rem">
+        <thead class="table-light">
+          <tr><th>Request</th><th>Action</th><th>Reason</th><th>Time</th></tr>
+        </thead>
+        <tbody>
+          {% for a in recent_decisions %}
+          <tr>
+            <td>{{ a.booking_request }}</td>
+            <td>
+              <span class="badge badge-{{ a.action }}ed px-2">{{ a.get_action_display }}</span>
+            </td>
+            <td>{{ a.reason|default:'—' }}</td>
+            <td class="text-muted">{{ a.timestamp|date:"d M H:i" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-muted text-center py-2">No decisions yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

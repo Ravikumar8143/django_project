@@ -1,0 +1,129 @@
+{% extends 'manage/layout.html' %}
+{% block title %}{{ title }} | Admin Panel{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block manage_content %}
+<div class="d-flex align-items-center gap-2 mb-4">
+  <a href="{{ back_url }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Back
+  </a>
+  <h5 class="mb-0 fw-bold" style="color:#007367">{{ title }}</h5>
+</div>
+
+{% if messages %}
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags }} alert-dismissible fade show py-2 mb-3" role="alert">
+  {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="card border-0 shadow-sm" style="max-width:600px">
+  <div class="card-body p-4">
+    <form method="post" novalidate id="bookingForm">
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="id_requested_by" style="font-size:.8rem">
+          Requested By <span class="text-danger">*</span>
+        </label>
+        <select name="requested_by" id="id_requested_by" class="form-select{% if errors.requested_by %} is-invalid{% endif %}">
+          <option value="">-- Select User --</option>
+          {% for u in users %}
+          <option value="{{ u.id }}"{% if values.requested_by|stringformat:"s" == u.id|stringformat:"s" %} selected{% endif %}>
+            {{ u.get_full_name|default:u.username }}
+          </option>
+          {% endfor %}
+        </select>
+        {% if errors.requested_by %}<div class="invalid-feedback d-block">{{ errors.requested_by }}</div>{% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="id_booking_date" style="font-size:.8rem">
+          Date <span class="text-danger">*</span>
+        </label>
+        <input type="date" name="booking_date" id="id_booking_date"
+               class="form-control{% if errors.booking_date %} is-invalid{% endif %}" value="{{ values.booking_date }}">
+        {% if errors.booking_date %}<div class="invalid-feedback d-block">{{ errors.booking_date }}</div>{% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="id_purpose" style="font-size:.8rem">
+          Purpose <span class="text-danger">*</span>
+        </label>
+        <select name="purpose" id="id_purpose" class="form-select{% if errors.purpose %} is-invalid{% endif %}">
+          <option value="">-- Select Purpose --</option>
+          {% for value, label in purposes %}
+          <option value="{{ value }}"{% if values.purpose == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        {% if errors.purpose %}<div class="invalid-feedback d-block">{{ errors.purpose }}</div>{% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="id_assigned_room" style="font-size:.8rem">Assigned Room</label>
+        <input type="text" name="assigned_room" id="id_assigned_room" class="form-control"
+               value="{{ values.assigned_room }}" placeholder="e.g. 6.2 (Lecture Hall, cap=60)">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="id_status" style="font-size:.8rem">
+          Status <span class="text-danger">*</span>
+        </label>
+        <select name="status" id="id_status" class="form-select{% if errors.status %} is-invalid{% endif %}">
+          {% for value, label in statuses %}
+          <option value="{{ value }}"{% if values.status == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        {% if errors.status %}<div class="invalid-feedback d-block">{{ errors.status }}</div>{% endif %}
+      </div>
+
+      <hr class="my-4">
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary px-4" style="background:#007367;border-color:#007367">
+          <i class="bi bi-check-lg me-1"></i>{% if is_edit %}Save Changes{% else %}Create{% endif %}
+        </button>
+        <a href="{{ back_url }}" class="btn btn-outline-secondary px-4">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+$(function () {
+  $('#bookingForm').on('submit', function (e) {
+    var errorMessages = [];
+    $(this).find('.is-invalid').removeClass('is-invalid');
+
+    if (!$('#id_requested_by').val()) {
+      $('#id_requested_by').addClass('is-invalid');
+      errorMessages.push('Requestor is required.');
+    }
+    if (!$('#id_booking_date').val()) {
+      $('#id_booking_date').addClass('is-invalid');
+      errorMessages.push('Date is required.');
+    }
+    if (!$('#id_purpose').val()) {
+      $('#id_purpose').addClass('is-invalid');
+      errorMessages.push('Purpose is required.');
+    }
+    if (!$('#id_status').val()) {
+      $('#id_status').addClass('is-invalid');
+      errorMessages.push('Status is required.');
+    }
+
+    if (errorMessages.length) {
+      e.preventDefault();
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Please fix the following',
+          html: errorMessages.join('<br>'),
+          confirmButtonColor: '#007367',
+        });
+      }
+    }
+  });
+});
+</script>
+{% endblock %}

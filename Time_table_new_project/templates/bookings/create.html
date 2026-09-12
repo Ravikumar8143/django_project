@@ -1,0 +1,693 @@
+{% extends 'base.html' %}
+{% block title %}New Room Booking{% endblock %}
+{% block page_title %}New Room Booking{% endblock %}
+{% block nav_booking_new %}active{% endblock %}
+
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/bookings.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-xl-10 col-lg-11">
+
+  <div class="mb-3">
+    <a href="{% url 'bookings:list' %}" class="text-decoration-none" style="font-size:.82rem;color:var(--teal)">
+      <i class="ri-arrow-left-line me-1"></i>Back to Bookings
+    </a>
+  </div>
+  <!-- Stepper -->
+  <div class="wizard-stepper" id="stepper">
+    <div class="wz-step active" data-step="1">
+      <div class="wz-num">1</div>
+      <div class="wz-label">Date &amp; Availability</div>
+    </div>
+    <div class="wz-step" data-step="2">
+      <div class="wz-num">2</div>
+      <div class="wz-label">Purpose &amp; Options</div>
+    </div>
+    <div class="wz-step" data-step="3">
+      <div class="wz-num">3</div>
+      <div class="wz-label">Preferred Room</div>
+    </div>
+    <div class="wz-step" data-step="4">
+      <div class="wz-num">4</div>
+      <div class="wz-label">Review &amp; Submit</div>
+    </div>
+  </div>
+
+  <form method="post" id="booking-form">
+    {% csrf_token %}
+    <input type="hidden" name="booking_date"        id="fld-date">
+    <input type="hidden" name="required_room_type"  id="fld-room-type"  value="any">
+    <input type="hidden" name="required_capacity"   id="fld-capacity"   value="1">
+    <input type="hidden" name="purpose"             id="fld-purpose"    value="other">
+    <input type="hidden" name="purpose_description" id="fld-desc"       value="">
+    <input type="hidden" name="is_cross_department" id="fld-cross"      value="">
+    <input type="hidden" name="is_recurring"        id="fld-recurring"  value="">
+    <input type="hidden" name="recurrence_end_date" id="fld-recur-end"  value="">
+    {# slot_numbers[] and preferred_room injected before submit by JS #}
+
+    {% if messages %}
+    {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags }} alert-dismissible fade show mb-3" style="font-size:.82rem" role="alert">
+      {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- ══════ STEP 1 — Date + Slots + Live Room Availability ══════ -->
+    <div class="wz-panel active" id="panel-1">
+      <div class="card">
+        <div class="card-header">
+          <i class="ri-calendar-2-line"></i>
+          <span>Step 1 — Select Date, Slots &amp; View Availability</span>
+        </div>
+        <div class="card-body p-3 p-md-4">
+          <div class="row g-4">
+
+            <!-- Left: calendar + slots -->
+            <div class="col-lg-5">
+              <div class="mini-cal mb-3">
+                <div class="mini-cal-head">
+                  <button type="button" id="mc-prev">&#8249;</button>
+                  <span id="mc-label"></span>
+                  <button type="button" id="mc-next">&#8250;</button>
+                </div>
+                <div class="mini-cal-grid" id="mc-grid"></div>
+              </div>
+              <div class="text-center mb-3" style="font-size:.75rem;color:#6c757d">
+                Selected: <strong id="sel-date-lbl" style="color:var(--teal)">—</strong>
+              </div>
+
+              <label class="form-label fw-semibold" style="font-size:.82rem">
+                Time Slots <span class="text-danger">*</span>
+              </label>
+              <div id="slot-loading" class="text-muted" style="font-size:.78rem;display:none">
+                <div class="spinner-border spinner-border-sm me-1" style="color:var(--teal);width:12px;height:12px;border-width:2px"></div>
+                Loading slots…
+              </div>
+              <div class="slot-grid mb-1" id="slot-grid">
+                <div class="text-muted" style="font-size:.75rem;grid-column:1/-1">
+                  <i class="ri-calendar-line me-1"></i>Pick a date to see available slots.
+                </div>
+              </div>
+              <div class="form-text">Slots are loaded from the schedule for the selected date.</div>
+            </div>
+
+            <!-- Right: availability grid -->
+            <div class="col-lg-7">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="fw-semibold" style="font-size:.82rem;color:var(--teal-dark)">
+                  <i class="ri-door-open-line me-1"></i>Room Availability
+                </span>
+                <div class="spinner-border spinner-border-sm d-none" id="avail-spin"
+                     style="color:var(--teal);width:14px;height:14px;border-width:2px"></div>
+              </div>
+              <div class="d-flex flex-wrap gap-2 mb-2">
+                <span class="rc-stat s-available" style="position:static">Available</span>
+                <span class="rc-stat s-booked"    style="position:static">Booked</span>
+                <span class="rc-stat s-pending"   style="position:static">Tentative</span>
+                <span class="rc-stat s-unavailable" style="position:static">Maintenance</span>
+              </div>
+              <div id="avail-placeholder" class="text-center text-muted py-5">
+                <i class="ri-calendar-check-line" style="font-size:2.5rem;opacity:.2"></i><br>
+                <small>Pick a date and at least one slot to see room availability.</small>
+              </div>
+              <div class="room-avail-grid d-none" id="room-avail-grid"></div>
+              <div id="avail-summary" class="d-none mt-2 d-flex flex-wrap gap-3" style="font-size:.75rem">
+                <span><span id="cnt-avail"  style="color:var(--teal);font-weight:700">0</span> available</span>
+                <span><span id="cnt-booked" style="color:#c0392b;font-weight:700">0</span> booked</span>
+                <span><span id="cnt-pend"   style="color:#7d5c00;font-weight:700">0</span> tentative</span>
+                <span><span id="cnt-maint"  style="color:#888;font-weight:700">0</span> maintenance</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end mt-4 pt-3" style="border-top:1px solid #eef2f1">
+            <button type="button" class="btn btn-primary px-5" id="s1-next">
+              Next: Purpose &amp; Options <i class="ri-arrow-right-line ms-1"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════ STEP 2 — Purpose & Options ══════ -->
+    <div class="wz-panel" id="panel-2">
+      <div class="card">
+        <div class="card-header">
+          <i class="ri-file-text-line"></i>
+          <span>Step 2 — Purpose &amp; Options</span>
+        </div>
+        <div class="card-body p-3 p-md-4">
+          <div class="row g-3">
+
+            <div class="col-md-5">
+              <label class="form-label fw-semibold" style="font-size:.82rem">
+                Purpose <span class="text-danger">*</span>
+              </label>
+              <select class="form-select" id="inp-purpose">
+                {% for val, lbl in purposes %}
+                <option value="{{ val }}">{{ lbl }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold" style="font-size:.82rem">Description / Additional Details</label>
+              <textarea class="form-control" id="inp-desc" rows="3"
+                        placeholder="Provide additional context about the booking…"></textarea>
+            </div>
+
+            <!-- Room type — populated from DB via context variable -->
+            <div class="col-md-5">
+              <label class="form-label fw-semibold" style="font-size:.82rem">
+                Room Type Required <span class="text-danger">*</span>
+              </label>
+              <select class="form-select" id="inp-room-type">
+                {% for rt in room_types %}
+                <option value="{{ rt.value }}">{{ rt.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold" style="font-size:.82rem">
+                Expected Attendees <span class="text-danger">*</span>
+              </label>
+              <input type="number" class="form-control" id="inp-capacity" min="1" value="30">
+            </div>
+
+            <div class="col-12">
+              <div class="p-3 rounded" style="background:#f4f6f5;border:1px solid #d4e9e6">
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="inp-cross">
+                  <label class="form-check-label fw-semibold" for="inp-cross" style="font-size:.82rem">
+                    Cross-department booking
+                  </label>
+                  <div class="form-text">Requires at least 24 hours advance notice.</div>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="inp-recurring">
+                  <label class="form-check-label fw-semibold" for="inp-recurring" style="font-size:.82rem">
+                    Recurring booking
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-5" id="recur-end-block" style="display:none">
+              <label class="form-label fw-semibold" style="font-size:.82rem">Recurrence End Date</label>
+              <input type="date" class="form-control" id="inp-recur-end">
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4 pt-3" style="border-top:1px solid #eef2f1">
+            <button type="button" class="btn btn-outline-secondary px-4" id="s2-back">
+              <i class="ri-arrow-left-line me-1"></i>Back
+            </button>
+            <button type="button" class="btn btn-primary px-5" id="s2-next">
+              Next: Preferred Room <i class="ri-arrow-right-line ms-1"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════ STEP 3 — Preferred Room Selection ══════ -->
+    <div class="wz-panel" id="panel-3">
+      <div class="card">
+        <div class="card-header">
+          <i class="ri-building-2-line"></i>
+          <span>Step 3 — Select Preferred Room <span style="font-weight:400;font-size:.85em">(optional)</span></span>
+        </div>
+        <div class="card-body p-3 p-md-4">
+
+          <div class="p-2 rounded mb-3" style="background:#fff8e1;border:1px solid #e8c57a;font-size:.75rem;color:#7d5c00">
+            <i class="ri-information-line me-1"></i>
+            Preference only — HOI may assign a different room. You can skip this step.
+          </div>
+          <div class="mb-3" style="font-size:.78rem;color:#6c757d">
+            Showing rooms for
+            <strong id="s3-date-lbl" style="color:var(--teal)">—</strong>,
+            <strong id="s3-slots-lbl" style="color:var(--teal)">—</strong>
+            &bull;
+            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 ms-1" id="s3-filter-btn">
+              <i class="ri-filter-line me-1"></i>Apply filter
+            </button>
+          </div>
+
+          <div class="row g-3" id="room-pick-grid"></div>
+
+          <div class="d-flex justify-content-between mt-4 pt-3" style="border-top:1px solid #eef2f1">
+            <button type="button" class="btn btn-outline-secondary px-4" id="s3-back">
+              <i class="ri-arrow-left-line me-1"></i>Back
+            </button>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-outline-secondary px-3" id="s3-skip">
+                Skip (No Preference)
+              </button>
+              <button type="button" class="btn btn-primary px-5" id="s3-next">
+                Review Booking <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════ STEP 4 — Review & Submit ══════ -->
+    <div class="wz-panel" id="panel-4">
+      <div class="card">
+        <div class="card-header">
+          <i class="ri-checkbox-circle-line"></i>
+          <span>Step 4 — Review &amp; Submit</span>
+        </div>
+        <div class="card-body p-3 p-md-4">
+
+          <div class="p-3 rounded mb-4" style="background:#e6f4f2;border:1px solid var(--teal)">
+            <div class="rv-row">
+              <span class="rv-lbl"><i class="ri-calendar-2-line me-1"></i>Booking Date</span>
+              <span class="rv-val" id="rv-date">—</span>
+            </div>
+            <div class="rv-row">
+              <span class="rv-lbl"><i class="ri-time-line me-1"></i>Time Slots</span>
+              <span class="rv-val" id="rv-slots">—</span>
+            </div>
+            <div class="rv-row">
+              <span class="rv-lbl"><i class="ri-file-text-line me-1"></i>Purpose</span>
+              <span class="rv-val" id="rv-purpose">—</span>
+            </div>
+            <div class="rv-row" id="rv-desc-row">
+              <span class="rv-lbl"><i class="ri-sticky-note-line me-1"></i>Description</span>
+              <span class="rv-val" id="rv-desc">—</span>
+            </div>
+            <div class="rv-row">
+              <span class="rv-lbl"><i class="ri-building-2-line me-1"></i>Room Type</span>
+              <span class="rv-val" id="rv-rtype">—</span>
+            </div>
+            <div class="rv-row">
+              <span class="rv-lbl"><i class="ri-group-line me-1"></i>Expected Attendees</span>
+              <span class="rv-val" id="rv-cap">—</span>
+            </div>
+            <div class="rv-row">
+              <span class="rv-lbl"><i class="ri-door-open-line me-1"></i>Preferred Room</span>
+              <span class="rv-val" id="rv-room">No preference</span>
+            </div>
+            <div class="rv-row" style="border:none">
+              <span class="rv-lbl"><i class="ri-flag-line me-1"></i>Flags</span>
+              <span class="rv-val" id="rv-flags">None</span>
+            </div>
+          </div>
+
+          <div class="p-2 rounded mb-4" style="background:#fff8e1;border:1px solid #e8c57a;font-size:.78rem;color:#7d5c00">
+            <i class="ri-information-line me-1"></i>
+            Request will be reviewed by the <strong>Head of Institute</strong>.
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <button type="button" class="btn btn-outline-secondary px-4" id="s4-back">
+              <i class="ri-arrow-left-line me-1"></i>Back
+            </button>
+            <button type="submit" class="btn btn-primary px-5 d-flex align-items-center gap-2">
+              <i class="ri-send-plane-line"></i>Submit Booking Request
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </form>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function(){
+"use strict";
+
+const AVAIL_URL = '{% url "bookings:availability" %}';
+const MONTHS    = ['January','February','March','April','May','June',
+                   'July','August','September','October','November','December'];
+const DAYS      = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+const today = new Date(); today.setHours(0,0,0,0);
+let calYear  = today.getFullYear();
+let calMonth = today.getMonth();
+
+// ── State ─────────────────────────────────────────────────────
+let selectedDate   = null;   // 'YYYY-MM-DD'
+let slotsForDay    = [];     // [{n,start,end,label}] — from DB via API
+let selectedSlots  = [];     // [slot_numbers chosen by user]
+let availRooms     = [];     // latest API rooms result
+let selectedRoomPk = null;
+let selectedRoomId = null;
+
+// ── Stepper ───────────────────────────────────────────────────
+function goTo(n) {
+  document.querySelectorAll('.wz-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + n).classList.add('active');
+  document.querySelectorAll('.wz-step').forEach(s => {
+    const sn = +s.dataset.step;
+    s.classList.remove('active','done');
+    if (sn === n)    s.classList.add('active');
+    else if (sn < n) s.classList.add('done');
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── Date helpers ──────────────────────────────────────────────
+function fmtDate(d) {
+  return d.getFullYear() + '-' +
+    String(d.getMonth()+1).padStart(2,'0') + '-' +
+    String(d.getDate()).padStart(2,'0');
+}
+
+// ── Mini Calendar ─────────────────────────────────────────────
+function renderCal() {
+  document.getElementById('mc-label').textContent = MONTHS[calMonth] + ' ' + calYear;
+  const grid = document.getElementById('mc-grid');
+  grid.innerHTML = '';
+  DAYS.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'mc-dname'; el.textContent = d; grid.appendChild(el);
+  });
+  const firstDow = new Date(calYear, calMonth, 1).getDay();
+  const offset   = firstDow === 0 ? 6 : firstDow - 1;
+  const dim      = new Date(calYear, calMonth+1, 0).getDate();
+  for (let i=0;i<offset;i++){
+    const el=document.createElement('div');el.className='mc-day mc-empty';grid.appendChild(el);
+  }
+  for (let d=1;d<=dim;d++){
+    const el  = document.createElement('div');
+    el.className='mc-day'; el.textContent=d;
+    const dt  = new Date(calYear,calMonth,d);
+    const dow = dt.getDay();
+    const ds  = fmtDate(dt);
+    if      (dow===0||dow===6) el.classList.add('mc-weekend');
+    else if (dt < today)       el.classList.add('mc-past');
+    else                       el.addEventListener('click',()=>pickDate(ds));
+    if (dt.toDateString()===today.toDateString()) el.classList.add('mc-today');
+    if (selectedDate===ds) el.classList.add('mc-selected');
+    grid.appendChild(el);
+  }
+}
+document.getElementById('mc-prev').onclick = () => {
+  if (--calMonth<0){calMonth=11;calYear--;} renderCal();
+};
+document.getElementById('mc-next').onclick = () => {
+  if (++calMonth>11){calMonth=0;calYear++;} renderCal();
+};
+
+function pickDate(ds) {
+  selectedDate = ds;
+  document.getElementById('fld-date').value = ds;
+  document.getElementById('sel-date-lbl').textContent = ds;
+  renderCal();
+  // Fetch slots for day from DB via API (no slots param → returns slots_for_day)
+  fetchSlotsForDay(ds);
+}
+
+// ── Fetch slots for selected day ──────────────────────────────
+function fetchSlotsForDay(ds) {
+  document.getElementById('slot-loading').style.display='';
+  document.getElementById('slot-grid').innerHTML='';
+  selectedSlots = [];
+  clearAvail();
+  fetch(`${AVAIL_URL}?date=${ds}`, {headers:{'X-Requested-With':'XMLHttpRequest'}})
+    .then(r=>r.json())
+    .then(data=>{
+      slotsForDay = data.slots_for_day || [];
+      document.getElementById('slot-loading').style.display='none';
+      renderSlots();
+      // Show all-room availability for this date right away
+      if (slotsForDay.length) {
+        availRooms = data.rooms || [];
+        renderAvailGrid(availRooms);
+      }
+    })
+    .catch(()=>document.getElementById('slot-loading').style.display='none');
+}
+
+// ── Slot picker ───────────────────────────────────────────────
+function renderSlots() {
+  const g = document.getElementById('slot-grid');
+  g.innerHTML = '';
+  if (!slotsForDay.length) {
+    g.innerHTML = '<div class="text-muted" style="font-size:.75rem;grid-column:1/-1">' +
+      '<i class="ri-calendar-line me-1"></i>No teaching slots found for this day.</div>';
+    return;
+  }
+  slotsForDay.forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'slot-btn' + (selectedSlots.includes(s.n) ? ' selected' : '');
+    el.dataset.n = s.n;
+    el.innerHTML = `<span class="snum">Slot ${s.n}</span><span class="stime">${s.label}</span>`;
+    el.addEventListener('click', () => {
+      const idx = selectedSlots.indexOf(s.n);
+      if (idx===-1) selectedSlots.push(s.n);
+      else          selectedSlots.splice(idx,1);
+      el.classList.toggle('selected');
+      if (selectedDate && selectedSlots.length) fetchAvailability();
+      else clearAvail();
+    });
+    g.appendChild(el);
+  });
+}
+
+function clearAvail() {
+  document.getElementById('avail-placeholder').classList.remove('d-none');
+  document.getElementById('room-avail-grid').classList.add('d-none');
+  document.getElementById('avail-summary').classList.add('d-none');
+}
+
+// ── Availability AJAX ─────────────────────────────────────────
+let _fetchTimer = null;
+function fetchAvailability() {
+  clearTimeout(_fetchTimer);
+  _fetchTimer = setTimeout(_doFetch, 280);
+}
+function _doFetch() {
+  const url = `${AVAIL_URL}?date=${selectedDate}&slots=${selectedSlots.join(',')}`;
+  document.getElementById('avail-spin').classList.remove('d-none');
+  fetch(url,{headers:{'X-Requested-With':'XMLHttpRequest'}})
+    .then(r=>r.json())
+    .then(data=>{
+      availRooms = data.rooms || [];
+      renderAvailGrid(availRooms);
+      document.getElementById('avail-spin').classList.add('d-none');
+    })
+    .catch(()=>document.getElementById('avail-spin').classList.add('d-none'));
+}
+
+const STATUS_MAP={
+  available: {cls:'s-available',lbl:'Available'},
+  booked:    {cls:'s-booked',   lbl:'Booked'},
+  pending:   {cls:'s-pending',  lbl:'Tentative'},
+  unavailable:{cls:'s-unavailable',lbl:'Maintenance'},
+};
+
+function renderAvailGrid(rooms) {
+  const g = document.getElementById('room-avail-grid');
+  g.innerHTML='';
+  if (!rooms.length) {
+    g.innerHTML='<p class="text-muted col-12" style="font-size:.78rem">No rooms found.</p>';
+    g.classList.remove('d-none');
+    document.getElementById('avail-placeholder').classList.add('d-none');
+    return;
+  }
+  const cnt={available:0,booked:0,pending:0,unavailable:0};
+  rooms.forEach(r=>{
+    cnt[r.status]=(cnt[r.status]||0)+1;
+    const sm=STATUS_MAP[r.status]||{cls:'s-unavailable',lbl:r.status};
+    const card=document.createElement('div');
+    card.className=`rc rc-${r.status}`;
+    card.innerHTML=`
+      <span class="rc-stat ${sm.cls}">${sm.lbl}</span>
+      <div class="rc-id">${r.room_id}</div>
+      <div class="rc-meta">${r.building_code||r.building} &bull; Fl.${r.floor}</div>
+      <div class="rc-meta" style="text-transform:capitalize">${r.room_type}</div>
+      <div style="font-size:.72rem;font-weight:600;margin-top:.25rem">
+        <i class="ri-group-line me-1" style="color:var(--teal)"></i>${r.capacity} seats
+      </div>
+      <div class="seat-mini">${miniSeats(r.capacity,20)}</div>`;
+    g.appendChild(card);
+  });
+  g.classList.remove('d-none');
+  document.getElementById('avail-placeholder').classList.add('d-none');
+  document.getElementById('avail-summary').classList.remove('d-none');
+  document.getElementById('cnt-avail').textContent  = cnt.available   ||0;
+  document.getElementById('cnt-booked').textContent = cnt.booked      ||0;
+  document.getElementById('cnt-pend').textContent   = cnt.pending     ||0;
+  document.getElementById('cnt-maint').textContent  = cnt.unavailable ||0;
+}
+
+function miniSeats(cap,show){
+  let html=''; const n=Math.min(cap,show);
+  for(let i=0;i<n;i++){
+    if(i>0&&i%4===2) html+='<span class="sm a"></span>';
+    html+='<span class="sm f"></span>';
+  }
+  if(cap>show) html+=`<span style="font-size:.6rem;color:#6c757d">+${cap-show}</span>`;
+  return html;
+}
+
+// ── Step 1 → 2 ───────────────────────────────────────────────
+document.getElementById('s1-next').addEventListener('click',()=>{
+  if (!selectedDate)        {alert('Please select a date.');           return;}
+  if (!selectedSlots.length){alert('Please select at least one slot.');return;}
+  goTo(2);
+});
+
+// ── Step 2 ────────────────────────────────────────────────────
+document.getElementById('inp-recurring').addEventListener('change',function(){
+  document.getElementById('recur-end-block').style.display=this.checked?'':'none';
+});
+document.getElementById('s2-back').addEventListener('click',()=>goTo(1));
+document.getElementById('s2-next').addEventListener('click',()=>{
+  document.getElementById('fld-room-type').value=document.getElementById('inp-room-type').value;
+  document.getElementById('fld-capacity').value =document.getElementById('inp-capacity').value;
+  document.getElementById('fld-purpose').value  =document.getElementById('inp-purpose').value;
+  document.getElementById('fld-desc').value     =document.getElementById('inp-desc').value;
+  document.getElementById('fld-cross').value    =document.getElementById('inp-cross').checked?'on':'';
+  document.getElementById('fld-recurring').value=document.getElementById('inp-recurring').checked?'on':'';
+  document.getElementById('fld-recur-end').value=document.getElementById('inp-recur-end').value;
+  buildRoomPickGrid();
+  goTo(3);
+});
+
+// ── Step 3 — Room pick grid ───────────────────────────────────
+function slotLabel(n){
+  const s=slotsForDay.find(x=>x.n===n);
+  return s?`Slot ${n} (${s.label})`:`Slot ${n}`;
+}
+
+function buildRoomPickGrid(){
+  document.getElementById('s3-date-lbl').textContent  = selectedDate||'—';
+  document.getElementById('s3-slots-lbl').textContent = selectedSlots.map(slotLabel).join(', ')||'—';
+  _renderPickGrid();
+}
+
+function _renderPickGrid(){
+  const typeFilter=document.getElementById('inp-room-type').value;
+  const capFilter =parseInt(document.getElementById('inp-capacity').value)||1;
+  const grid=document.getElementById('room-pick-grid');
+  grid.innerHTML='';
+
+  let rooms=availRooms;
+  if(typeFilter&&typeFilter!=='any') rooms=rooms.filter(r=>r.room_type===typeFilter);
+  rooms=rooms.filter(r=>r.capacity>=capFilter);
+
+  if(!rooms.length){
+    grid.innerHTML=`<div class="col-12 text-center py-4 text-muted">
+      <i class="ri-search-line" style="font-size:2rem;opacity:.3"></i><br>
+      <small>No rooms match your criteria.</small></div>`;
+    return;
+  }
+
+  rooms.forEach(r=>{
+    const selectable=r.status==='available'||r.status==='pending';
+    const sm=STATUS_MAP[r.status]||{cls:'s-unavailable',lbl:r.status};
+    const isSelected=selectedRoomPk===r.pk;
+    const extraCls=!selectable?`rp-${r.status}`:(isSelected?'selected':'');
+    const seats=buildBusSeats(r.capacity,capFilter);
+    const col=document.createElement('div');
+    col.className='col-sm-6 col-md-4';
+    col.innerHTML=`
+      <div class="room-pick-card ${extraCls}" data-pk="${r.pk}" data-id="${r.room_id}">
+        <span class="rc-stat ${sm.cls}" style="position:absolute;top:.45rem;right:.6rem">${sm.lbl}</span>
+        <div class="fw-bold mb-1" style="font-size:.85rem;color:var(--teal-dark)">${r.room_id}</div>
+        <div style="font-size:.72rem;color:#6c757d">${r.building} &bull; Floor ${r.floor}</div>
+        <div style="font-size:.72rem;text-transform:capitalize;margin-top:.1rem">${r.room_type}</div>
+        <div style="font-size:.75rem;font-weight:600;margin:.3rem 0">
+          <i class="ri-group-line me-1" style="color:var(--teal)"></i>${r.capacity} seats
+        </div>
+        <div class="seat-mini" style="gap:2px">${seats}</div>
+        ${selectable?'<div class="mt-2" style="font-size:.68rem;color:var(--teal)"><i class="ri-cursor-line me-1"></i>Click to select</div>':''}
+      </div>`;
+    const card=col.querySelector('.room-pick-card');
+    if(selectable){
+      card.addEventListener('click',()=>{
+        grid.querySelectorAll('.room-pick-card').forEach(c=>c.classList.remove('selected'));
+        if(selectedRoomPk===r.pk){
+          selectedRoomPk=null;selectedRoomId=null;
+        } else {
+          card.classList.add('selected');
+          selectedRoomPk=r.pk;selectedRoomId=r.room_id;
+        }
+      });
+    }
+    grid.appendChild(col);
+  });
+}
+
+function buildBusSeats(cap,needed){
+  const show=Math.min(cap,36); let html='';
+  for(let i=0;i<show;i++){
+    if(i>0&&i%4===2) html+='<span class="sm a"></span>';
+    html+=`<span class="sm ${i<needed?'f':'e'}"></span>`;
+  }
+  if(cap>36) html+=`<span style="font-size:.62rem;color:#6c757d">+${cap-36}</span>`;
+  return html;
+}
+
+document.getElementById('s3-filter-btn').addEventListener('click',_renderPickGrid);
+document.getElementById('s3-back').addEventListener('click',()=>goTo(2));
+document.getElementById('s3-skip').addEventListener('click',()=>{
+  selectedRoomPk=null;selectedRoomId=null;
+  populateReview();goTo(4);
+});
+document.getElementById('s3-next').addEventListener('click',()=>{
+  populateReview();goTo(4);
+});
+
+// ── Step 4 — Review ───────────────────────────────────────────
+function optLabel(selId){
+  const s=document.getElementById(selId);
+  return s?s.options[s.selectedIndex]?.text:'—';
+}
+function populateReview(){
+  document.getElementById('rv-date').textContent    = selectedDate||'—';
+  document.getElementById('rv-slots').textContent   = selectedSlots.map(slotLabel).join(', ')||'—';
+  document.getElementById('rv-purpose').textContent = optLabel('inp-purpose');
+  document.getElementById('rv-rtype').textContent   = optLabel('inp-room-type');
+  document.getElementById('rv-cap').textContent     = (document.getElementById('inp-capacity').value||'?')+' people';
+  document.getElementById('rv-room').textContent    = selectedRoomId||'No preference';
+  const desc=document.getElementById('inp-desc').value.trim();
+  if(desc){document.getElementById('rv-desc').textContent=desc;document.getElementById('rv-desc-row').style.display='';}
+  else     {document.getElementById('rv-desc-row').style.display='none';}
+  const flags=[];
+  if(document.getElementById('inp-cross').checked)    flags.push('Cross-department');
+  if(document.getElementById('inp-recurring').checked){
+    const end=document.getElementById('inp-recur-end').value;
+    flags.push('Recurring'+(end?' until '+end:''));
+  }
+  document.getElementById('rv-flags').textContent=flags.join(', ')||'None';
+}
+document.getElementById('s4-back').addEventListener('click',()=>goTo(3));
+
+// ── Form submit ───────────────────────────────────────────────
+document.getElementById('booking-form').addEventListener('submit',function(){
+  this.querySelectorAll('[name="slot_numbers"]').forEach(e=>e.remove());
+  selectedSlots.forEach(n=>{
+    const inp=document.createElement('input');
+    inp.type='hidden';inp.name='slot_numbers';inp.value=n;
+    this.appendChild(inp);
+  });
+  this.querySelectorAll('[name="preferred_room"]').forEach(e=>e.remove());
+  if(selectedRoomPk){
+    const inp=document.createElement('input');
+    inp.type='hidden';inp.name='preferred_room';inp.value=selectedRoomPk;
+    this.appendChild(inp);
+  }
+});
+
+// ── Init ──────────────────────────────────────────────────────
+renderCal();
+
+})();
+</script>
+{% endblock %}

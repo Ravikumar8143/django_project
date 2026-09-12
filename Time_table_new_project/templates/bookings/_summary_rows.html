@@ -1,0 +1,38 @@
+<!-- Reusable booking summary snippet -->
+<div class="row g-2" style="font-size:.82rem">
+  <div class="col-6">
+    <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b8c87">Requested By</div>
+    <div class="fw-semibold" style="color:var(--teal-dark)">
+      {{ booking.requested_by.get_full_name|default:booking.requested_by.username }}
+    </div>
+    <div style="font-size:.7rem;color:#6b8c87">{{ booking.requested_by.get_role_display }}</div>
+  </div>
+  <div class="col-6">
+    <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b8c87">Date</div>
+    <div class="fw-semibold" style="color:var(--teal-dark)">{{ booking.booking_date|date:"l, d M Y" }}</div>
+  </div>
+  <div class="col-6">
+    <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b8c87">Room Type</div>
+    <div>{{ booking.get_required_room_type_display }}</div>
+  </div>
+  <div class="col-6">
+    <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b8c87">Capacity Needed</div>
+    <div class="fw-bold" style="color:var(--teal-dark)">{{ booking.required_capacity }}</div>
+  </div>
+  <div class="col-12">
+    <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b8c87">Purpose</div>
+    <div>{{ booking.get_purpose_display }}
+      {% if booking.purpose_description %}
+      <span class="text-muted">— {{ booking.purpose_description|truncatechars:60 }}</span>
+      {% endif %}
+    </div>
+  </div>
+  {% if booking.is_cross_department %}
+  <div class="col-12">
+    <span style="background:#fff8e8;color:var(--gold-text);border:1px solid var(--gold-dark);
+                 border-radius:.4rem;padding:.2rem .55rem;font-size:.72rem;font-weight:600">
+      <i class="ri-exchange-line me-1"></i>Cross-Department Request
+    </span>
+  </div>
+  {% endif %}
+</div>

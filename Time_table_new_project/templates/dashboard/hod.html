@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}HOD Dashboard{% endblock %}
+{% block page_title %}Head of Department — {{ department.name|default:'Dashboard' }}{% endblock %}
+{% block nav_hod %}active{% endblock %}
+
+{% block content %}
+{% if messages %}
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show" role="alert">
+  {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+{% if not department %}
+<div class="alert alert-warning">No department assigned to your account. Contact system admin.</div>
+{% else %}
+
+<div class="row g-3 mb-4">
+  {% include 'dashboard/_stat_card.html' with icon='bi-people' color='#dbeafe' icon_color='#1d4ed8' label='Faculty' value=stats.faculty_count %}
+  {% include 'dashboard/_stat_card.html' with icon='bi-diagram-3' color='#d1fae5' icon_color='#065f46' label='Sections' value=stats.sections_count %}
+  {% include 'dashboard/_stat_card.html' with icon='bi-book' color='#fef3c7' icon_color='#92400e' label='Courses' value=stats.courses %}
+</div>
+
+<div class="row g-3">
+  <!-- Faculty list -->
+  <div class="col-md-5">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white fw-semibold border-0">
+        <i class="bi bi-person-video3 me-2 text-primary"></i>Faculty in {{ department.code }}
+      </div>
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+          {% for f in faculty_list %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-semibold" style="font-size:.88rem">{{ f.get_full_name|default:f.username }}</div>
+              <small class="text-muted">{{ f.employee_id|default:'—' }} &bull; {{ f.email }}</small>
+            </div>
+            <span class="badge bg-light text-dark border">Faculty</span>
+          </li>
+          {% empty %}
+          <li class="list-group-item text-muted">No faculty members found.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sections -->
+  <div class="col-md-7">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white fw-semibold border-0">
+        <i class="bi bi-grid me-2 text-success"></i>Active Sections
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0" style="font-size:.82rem">
+            <thead class="table-light">
+              <tr><th>Section</th><th>Program</th><th>Semester</th><th>SET</th><th>Enrolled</th></tr>
+            </thead>
+            <tbody>
+              {% for sec in sections %}
+              <tr>
+                <td><strong>{{ sec.name }}</strong></td>
+                <td>{{ sec.offering.program.code }}</td>
+                <td>{{ sec.offering.semester_number }}</td>
+                <td><span class="badge bg-secondary" style="font-size:.7rem">{{ sec.set_group|default:'—' }}</span></td>
+                <td>{{ sec.enrolled_count }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="5" class="text-muted text-center py-3">No sections found.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

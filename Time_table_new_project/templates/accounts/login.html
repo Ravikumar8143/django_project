@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block title %}Sign In{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center"
+     style="background: linear-gradient(135deg, #004a42 0%, #007367 55%, #1a8c7e 100%); padding: 1.5rem;">
+
+  <div style="width:100%;max-width:440px">
+
+    <!-- Logo -->
+    <div class="text-center mb-4">
+      <img src="https://cdn.gitam.edu/images/logo/cats-logo-white.png"
+           alt="GITAM" style="height:52px;width:auto;object-fit:contain;margin-bottom:.75rem">
+      <div>
+        <small style="color:rgba(247,221,173,.8);font-size:.78rem">Timetable &amp; Room Booking System</small>
+      </div>
+    </div>
+
+    <!-- Login card -->
+    <div class="card border-0" style="border-radius:1rem;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.22)">
+
+      <!-- Gold accent bar -->
+      <div style="height:4px;background:linear-gradient(90deg,#f7ddad,#e8c57a)"></div>
+
+      <div class="card-body p-4 p-md-5">
+        <h6 class="fw-bold mb-1" style="color:#005a50">Welcome back</h6>
+        <p class="text-muted mb-4" style="font-size:.82rem">Sign in to access your dashboard</p>
+
+        {% if error %}
+        <div class="alert alert-danger py-2 mb-3" style="font-size:.82rem">
+          <i class="ri-error-warning-line me-1"></i>
+          {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="post">
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="id_email_or_emp_id"
+                   style="font-size:.82rem;color:#2d3e3b">
+              <i class="ri-user-line me-1" style="color:#007367"></i>Email or Employee ID
+            </label>
+            <div class="input-group">
+              <span class="input-group-text" style="background:#e6f4f2;border-color:#9ccfca;color:#007367">
+                <i class="ri-user-3-line"></i>
+              </span>
+              <input type="text" name="email_or_emp_id" id="id_email_or_emp_id"
+                     class="form-control" autofocus required
+                     value="{{ email_or_emp_id|default:'' }}">
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold" for="id_password"
+                   style="font-size:.82rem;color:#2d3e3b">
+              <i class="ri-lock-line me-1" style="color:#007367"></i>Password
+            </label>
+            <div class="input-group">
+              <span class="input-group-text" style="background:#e6f4f2;border-color:#9ccfca;color:#007367">
+                <i class="ri-lock-2-line"></i>
+              </span>
+              <input type="password" name="password" id="id_password"
+                     class="form-control" required>
+              <button type="button" id="togglePasswordBtn"
+                      class="input-group-text" style="cursor:pointer;background:#e6f4f2;border-color:#9ccfca;color:#007367"
+                      aria-label="Show password" tabindex="-1">
+                <i class="ri-eye-line" id="togglePasswordIcon"></i>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn w-100 py-2 fw-bold"
+                  style="background:linear-gradient(135deg,#007367,#005a50);color:#fff;border:none;border-radius:.6rem;font-size:.9rem;letter-spacing:.02em">
+            <i class="ri-login-box-line me-1"></i>Sign In
+          </button>
+        </form>
+      </div>
+
+      <!-- Demo logins footer -->
+      <div class="card-footer py-3 px-4 px-md-5 text-center"
+           style="background:#f8faf9;border-top:1px solid #e2eeec">
+        <div class="d-flex align-items-center justify-content-center gap-1 mb-2">
+          <i class="ri-shield-check-line" style="color:#007367;font-size:.85rem"></i>
+          <small class="text-muted" style="font-size:.73rem;font-weight:500">Authorised users only &mdash; GITAM School of CSE</small>
+        </div>
+        <div style="background:#fff8e8;border:1px solid #e8c57a;border-radius:.5rem;padding:.6rem .85rem;display:inline-block;text-align:left">
+          <div class="fw-bold mb-1" style="font-size:.7rem;color:#7a5a1a;text-transform:uppercase;letter-spacing:.05em">
+            <i class="ri-key-line me-1"></i>Demo Credentials
+          </div>
+          <div style="font-size:.72rem;color:#5a4010;line-height:1.7">
+            <code style="background:transparent;color:inherit">admin</code> / admin123 &nbsp;&bull;&nbsp;
+            <code style="background:transparent;color:inherit">hoi</code> / hoi123<br>
+            <code style="background:transparent;color:inherit">faculty1</code> / faculty123 &nbsp;&bull;&nbsp;
+            <code style="background:transparent;color:inherit">student1</code> / student123
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /card -->
+
+    <p class="text-center mt-3" style="font-size:.7rem;color:rgba(255,255,255,.4)">
+      &copy; 2026 GITAM University. All rights reserved.
+    </p>
+
+  </div>
+</div>
+
+<style>
+  /* Style the plain HTML inputs to match the theme */
+  #id_email_or_emp_id, #id_password {
+    border-color: #9ccfca;
+    font-size: .85rem;
+    padding: .5rem .75rem;
+  }
+  #id_email_or_emp_id:focus, #id_password:focus {
+    border-color: #007367;
+    box-shadow: 0 0 0 .2rem rgba(0,115,103,.15);
+  }
+</style>
+
+<script>
+  document.getElementById('togglePasswordBtn').addEventListener('click', function () {
+    var input = document.getElementById('id_password');
+    var icon = document.getElementById('togglePasswordIcon');
+    var isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    icon.className = isHidden ? 'ri-eye-off-line' : 'ri-eye-line';
+    this.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+  });
+</script>
+{% endblock %}

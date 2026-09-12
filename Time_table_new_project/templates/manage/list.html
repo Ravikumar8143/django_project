@@ -1,0 +1,122 @@
+{% extends 'manage/layout.html' %}
+{% block title %}{{ title }} | Admin Panel{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block manage_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div class="d-flex align-items-center gap-3">
+    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="history.back()">
+      <i class="bi bi-arrow-left me-1"></i>Back
+    </button>
+    <div>
+      <h5 class="mb-0 fw-bold" style="color:#007367">{{ title }}</h5>
+      <small class="text-muted">{{ rows|length }} record{{ rows|length|pluralize }}</small>
+    </div>
+  </div>
+  {% if add_url %}
+  <a href="{{ add_url }}" class="btn btn-sm btn-primary" style="background:#007367;border-color:#007367">
+    <i class="bi bi-plus-lg me-1"></i>Add New
+  </a>
+  {% endif %}
+</div>
+
+
+
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table id="manageTable" class="table table-hover table-sm align-middle mb-0" style="font-size:.83rem">
+        <thead class="table-light">
+          <tr>
+            {% for h in headers %}<th class="px-3">{{ h }}</th>{% endfor %}
+            <th class="px-3 text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            {% for cell in row.cells %}
+            <td class="px-3">{{ cell }}</td>
+            {% endfor %}
+            <td class="px-3 text-end text-nowrap">
+              <a href="{{ row.edit_url }}" class="btn btn-xs btn-outline-secondary btn-sm py-0 px-2 me-1">
+                <i class="bi bi-pencil"></i> Edit
+              </a>
+              <button type="button"
+                class="btn btn-xs btn-outline-danger btn-sm py-0 px-2"
+                data-bs-toggle="modal"
+                data-bs-target="#deleteModal{{ row.pk }}"
+              ><i class="bi bi-trash"></i> Delete</button>
+
+              {# Inline delete confirm modal #}
+              <div class="modal fade" id="deleteModal{{ row.pk }}" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered ">
+                  <div class="modal-content">
+                    <div class="modal-header py-2 border-0">
+                      <h6 class="modal-title text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Confirm Delete</h6>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                          <path d="M12.0007 10.5865L16.9504 5.63672L18.3646 7.05093L13.4149 12.0007L18.3646 16.9504L16.9504 18.3646L12.0007 13.4149L7.05093 18.3646L5.63672 16.9504L10.5865 12.0007L5.63672 7.05093L7.05093 5.63672L12.0007 10.5865Z">
+                          </path>
+                      </svg></button>
+                    </div>
+                    <div class="modal-body py-2 text-center" >
+                      Are you sure you want to delete record .
+                    </div>
+                    <div class="modal-footer py-2 border-0">
+                      <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                      <form method="post" action="{{ row.delete_url }}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="{{ headers|length|add:1 }}" class="text-center text-muted py-4">
+              <i class="bi bi-inbox fs-4 d-block mb-2"></i>No records found.
+              {% if add_url %}<a href="{{ add_url }}" class="d-block mt-1 small">Add the first one</a>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof $.fn.DataTable !== 'undefined') {
+    $('#manageTable').DataTable({
+      pageLength: 25,
+      order: [],
+      columnDefs: [{ orderable: false, targets: -1 }],
+      language: { search: 'Search:', lengthMenu: 'Show _MENU_ rows' },
+    });
+  }
+});
+</script>
+
+{% if messages %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof Swal === 'undefined') return;
+  {% for msg in messages %}
+  Swal.fire({
+    icon: '{% if msg.tags == "error" %}error{% else %}success{% endif %}',
+    title: '{{ msg|escapejs }}',
+    confirmButtonColor: '#007367',
+    timer: 2500,
+    showConfirmButton: false,
+  });
+  {% endfor %}
+});
+</script>
+{% endif %}
+{% endblock %}

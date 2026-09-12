@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Room Availability{% endblock %}
+{% block page_title %}Room Availability — {{ today }}{% endblock %}
+{% block nav_rooms %}active{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-white fw-semibold border-0 d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-building me-2 text-primary"></i>All Rooms — Today's Bookings</span>
+    <span class="text-muted" style="font-size:.82rem">{{ today }}</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0" style="font-size:.83rem">
+        <thead class="table-light">
+          <tr>
+            <th>Room ID</th><th>Type</th><th>Building</th><th>Capacity</th>
+            <th>Booked Slots Today</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for room in rooms %}
+          {% with booked=booked_slots|default_if_none:'' %}
+          <tr>
+            <td><strong>{{ room.room_id }}</strong></td>
+            <td>
+              <span class="badge bg-light text-dark border" style="font-size:.72rem">
+                {{ room.get_room_type_display }}
+              </span>
+            </td>
+            <td>{{ room.building.code }} — {{ room.building.name }}</td>
+            <td>{{ room.seating_capacity }}</td>
+            <td>
+              {% if room.id in booked_slots %}
+                {% for slot_id in booked_slots|default:'' %}
+                <span class="badge bg-danger me-1" style="font-size:.7rem">{{ slot_id }}</span>
+                {% endfor %}
+              {% else %}
+              <span class="text-success" style="font-size:.8rem">
+                <i class="bi bi-check-circle me-1"></i>Available all day
+              </span>
+              {% endif %}
+            </td>
+            <td>
+              {% if room.is_available %}
+              <span class="badge bg-success" style="font-size:.72rem">Available</span>
+              {% else %}
+              <span class="badge bg-secondary" style="font-size:.72rem">Unavailable</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endwith %}
+          {% empty %}
+          <tr><td colspan="6" class="text-center text-muted py-4">No rooms in inventory.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

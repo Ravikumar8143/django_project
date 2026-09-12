@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% block title %}Booking #{{ booking.pk }}{% endblock %}
+{% block page_title %}Booking Request #{{ booking.pk }}{% endblock %}
+
+{% block content %}
+
+<!-- Back -->
+<div class="mb-3">
+  <a href="{% url 'bookings:list' %}" class="text-decoration-none" style="font-size:.82rem;color:var(--teal)">
+    <i class="ri-arrow-left-line me-1"></i>Back to Bookings
+  </a>
+</div>
+
+<div class="row g-4">
+
+  <!-- Left: Main details -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header justify-content-between">
+        <div class="d-flex align-items-center gap-2">
+          <i class="ri-door-open-line"></i>
+          <span>Booking #{{ booking.pk }} — {{ booking.get_purpose_display }}</span>
+        </div>
+        <!-- Status badge -->
+        <span class="badge badge-{{ booking.status|lower }} px-3 py-2"
+              style="font-size:.75rem;border-radius:.5rem;font-weight:700">
+          {% if booking.status == 'PENDING' %}<i class="ri-time-line me-1"></i>
+          {% elif booking.status == 'APPROVED' %}<i class="ri-checkbox-circle-line me-1"></i>
+          {% elif booking.status == 'REJECTED' %}<i class="ri-close-circle-line me-1"></i>
+          {% else %}<i class="ri-forbid-line me-1"></i>{% endif %}
+          {{ booking.get_status_display }}
+        </span>
+      </div>
+      <div class="card-body">
+
+        <!-- Approved room highlight -->
+        {% if booking.status == 'APPROVED' and booking.assigned_room %}
+        <div class="d-flex align-items-center gap-3 p-3 mb-4 rounded"
+             style="background:var(--teal-light);border:1px solid #9ccfca">
+          <div style="width:48px;height:48px;background:var(--teal);border-radius:.6rem;
+                      display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="ri-building-2-line" style="color:var(--gold);font-size:1.4rem"></i>
+          </div>
+          <div>
+            <div class="fw-bold" style="color:var(--teal-dark);font-size:1rem">
+              {{ booking.assigned_room.room_id }}
+            </div>
+            <div style="font-size:.8rem;color:#3a7a70">
+              {{ booking.assigned_room.get_room_type_display }} &bull;
+              {{ booking.assigned_room.building.name }} &bull;
+              Floor {{ booking.assigned_room.floor }} &bull;
+              Capacity: {{ booking.assigned_room.seating_capacity }}
+            </div>
+          </div>
+          <div class="ms-auto">
+            <span class="badge" style="background:var(--teal);color:#fff;font-size:.72rem">
+              Room Confirmed
+            </span>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="detail-group">
+              <div class="detail-label">Requested By</div>
+              <div class="detail-value fw-semibold">
+                {{ booking.requested_by.get_full_name|default:booking.requested_by.username }}
+              </div>
+              <div style="font-size:.72rem;color:#6b8c87">
+                {{ booking.requested_by.get_role_display }}
+                {% if booking.department %}&bull; {{ booking.department.name }}{% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="detail-group">
+              <div class="detail-label">Booking Date</div>
+              <div class="detail-value fw-semibold">{{ booking.booking_date|date:"l, d F Y" }}</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="detail-group">
+              <div class="detail-label">Time Slots</div>
+              <div class="d-flex flex-wrap gap-1 mt-1">
+                {% for ts in booking.time_slots.all %}
+                <span style="background:var(--teal-light);color:var(--teal-dark);border:1px solid #9ccfca;
+                             border-radius:.4rem;padding:.25rem .6rem;font-size:.78rem;font-weight:600">
+                  {{ ts.slot_id }} &nbsp;
+                  <span style="font-weight:400;color:#3a7a70">
+                    {{ ts.start_time|time:"H:i" }}–{{ ts.end_time|time:"H:i" }}
+                  </span>
+                </span>
+                {% empty %}
+                <span class="text-muted" style="font-size:.82rem">No slots specified</span>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="detail-group">
+              <div class="detail-label">Room Type Required</div>
+              <div class="detail-value">{{ booking.get_required_room_type_display }}</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="detail-group">
+              <div class="detail-label">Expected Attendees</div>
+              <div class="detail-value fw-bold" style="color:var(--teal-dark)">{{ booking.required_capacity }}</div>
+            </div>
+          </div>
+          {% if booking.preferred_room %}
+          <div class="col-md-6">
+            <div class="detail-group">
+              <div class="detail-label">Preferred Room</div>
+              <div class="detail-value">
+                {{ booking.preferred_room.room_id }}
+                <span style="font-size:.72rem;color:#6b8c87">
+                  — {{ booking.preferred_room.building.name }}
+                </span>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          <div class="col-12">
+            <div class="detail-group">
+              <div class="detail-label">Purpose Description</div>
+              <div class="detail-value" style="font-size:.85rem">
+                {{ booking.purpose_description|default:"—" }}
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="detail-group">
+              <div class="detail-label">Cross-Department</div>
+              <div class="detail-value">
+                {% if booking.is_cross_department %}
+                <span style="color:#7a5a1a;font-weight:600">
+                  <i class="ri-exchange-line me-1"></i>Yes
+                </span>
+                {% else %}<span class="text-muted">No</span>{% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="detail-group">
+              <div class="detail-label">Recurring</div>
+              <div class="detail-value">
+                {% if booking.is_recurring %}
+                Yes — until {{ booking.recurrence_end_date|date:"d M Y" }}
+                {% else %}<span class="text-muted">No</span>{% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="detail-group">
+              <div class="detail-label">Submitted</div>
+              <div class="detail-value" style="font-size:.8rem">
+                {{ booking.submitted_at|date:"d M Y, H:i" }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action buttons -->
+        {% if can_approve or can_cancel %}
+        <div class="d-flex gap-2 mt-4 pt-3" style="border-top:1px solid #e2eeec">
+          {% if can_approve %}
+          <a href="{% url 'bookings:approve' booking.pk %}" class="btn btn-success d-flex align-items-center gap-2">
+            <i class="ri-checkbox-circle-line"></i>Approve &amp; Assign Room
+          </a>
+          <a href="{% url 'bookings:reject' booking.pk %}" class="btn btn-danger d-flex align-items-center gap-2">
+            <i class="ri-close-circle-line"></i>Reject
+          </a>
+          {% endif %}
+          {% if can_cancel %}
+          <button type="button" class="btn btn-outline-danger d-flex align-items-center gap-2"
+                  data-bs-toggle="modal" data-bs-target="#cancelModal">
+            <i class="ri-forbid-line"></i>Cancel Request
+          </button>
+          {% endif %}
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Audit trail -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <i class="ri-history-line"></i><span>Approval History</span>
+      </div>
+      <div class="card-body p-0">
+        {% if booking.audit_trail.all %}
+        <div class="timeline px-3 pt-2 pb-3">
+          {% for audit in booking.audit_trail.all %}
+          <div class="d-flex gap-3 py-3" style="{% if not forloop.last %}border-bottom:1px solid #edf4f3{% endif %}">
+            <div style="flex-shrink:0">
+              <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;
+                          justify-content:center;font-size:.85rem;
+                          background:{% if audit.action == 'approve' %}var(--teal-light){% elif audit.action == 'reject' %}#fff0f0{% elif audit.action == 'cancel' %}#f4f6f5{% else %}#fff8e8{% endif %}">
+                {% if audit.action == 'approve' %}<i class="ri-check-line" style="color:var(--teal)"></i>
+                {% elif audit.action == 'reject' %}<i class="ri-close-line" style="color:#dc3545"></i>
+                {% elif audit.action == 'cancel' %}<i class="ri-forbid-line" style="color:#6b8c87"></i>
+                {% else %}<i class="ri-swap-line" style="color:var(--gold-dark)"></i>{% endif %}
+              </div>
+            </div>
+            <div style="min-width:0">
+              <div class="fw-semibold" style="font-size:.8rem;color:var(--teal-dark)">
+                {{ audit.get_action_display }}
+              </div>
+              <div style="font-size:.72rem;color:#6b8c87">
+                by {{ audit.action_by.get_full_name|default:audit.action_by.username }}
+              </div>
+              {% if audit.reason %}
+              <div class="mt-1 p-2 rounded" style="background:#f4f6f5;font-size:.75rem;color:#3a4a47">
+                "{{ audit.reason }}"
+              </div>
+              {% endif %}
+              <div style="font-size:.68rem;color:#9aaba8;margin-top:.3rem">
+                {{ audit.timestamp|date:"d M Y, H:i" }}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+          <i class="ri-time-line" style="font-size:1.5rem;display:block;margin-bottom:.5rem;color:#b3cdc9"></i>
+          <small>No activity yet — awaiting HOI review.</small>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cancel modal -->
+{% if can_cancel %}
+<div class="modal fade" id="cancelModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:.75rem;border:none">
+      <div class="modal-header" style="border-bottom:2px solid var(--teal-light)">
+        <h6 class="modal-title fw-bold" style="color:var(--teal-dark)">
+          <i class="ri-alert-line me-2" style="color:#dc3545"></i>Cancel Booking Request
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="font-size:.85rem">
+        Are you sure you want to cancel booking request <strong>#{{ booking.pk }}</strong>?
+        This action cannot be undone.
+      </div>
+      <div class="modal-footer" style="border-top:1px solid #e2eeec">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Go Back</button>
+        <form method="post" action="{% url 'bookings:cancel' booking.pk %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">
+            <i class="ri-forbid-line me-1"></i>Yes, Cancel
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/components.css' %}">
+{% endblock %}

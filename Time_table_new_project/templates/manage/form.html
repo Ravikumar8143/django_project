@@ -1,0 +1,74 @@
+{% extends 'manage/layout.html' %}
+{% block title %}{{ title }} | Admin Panel{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block manage_content %}
+<div class="d-flex align-items-center gap-2 mb-4">
+
+  <h5 class="mb-0 fw-bold" style="color:#007367">{{ title }}</h5>
+</div>
+
+{% if messages %}
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags }} alert-dismissible fade show py-2 mb-3" role="alert">
+  {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="card border-0 shadow-sm" style="max-width:780px">
+  <div class="card-body p-4">
+    <form method="post" autocomplete="off" novalidate>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger py-2 mb-3" style="font-size:.85rem">
+        {% for err in form.non_field_errors %}{{ err }}{% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="row g-3">
+        {% for field in form %}
+        <div class="{% if field.field.widget.input_type == 'checkbox' %}col-12{% elif field.field.widget.attrs.rows %}col-12{% elif field.field.widget.input_type == 'select-multiple' %}col-12{% else %}col-md-6{% endif %}">
+          {% if field.field.widget.input_type == 'checkbox' %}
+            <div class="form-check">
+              {{ field }}
+              <label class="form-check-label" for="{{ field.id_for_label }}">
+                {{ field.label }}
+              </label>
+              {% if field.help_text %}
+              <div class="form-text text-muted" style="font-size:.75rem">{{ field.help_text }}</div>
+              {% endif %}
+              {% if field.errors %}
+              <div class="invalid-feedback d-block" style="font-size:.78rem">{{ field.errors.0 }}</div>
+              {% endif %}
+            </div>
+          {% else %}
+            <label class="form-label fw-semibold mb-1" for="{{ field.id_for_label }}" style="font-size:.8rem">
+              {{ field.label }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}
+            </label>
+            {{ field }}
+            {% if field.help_text %}
+            <div class="form-text text-muted" style="font-size:.75rem">{{ field.help_text }}</div>
+            {% endif %}
+            {% if field.errors %}
+            <div class="text-danger mt-1" style="font-size:.78rem">{{ field.errors.0 }}</div>
+            {% endif %}
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+
+      <hr class="my-4">
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary px-4" style="background:#007367;border-color:#007367">
+          <i class="bi bi-check-lg me-1"></i>{% if is_edit %}Save Changes{% else %}Create{% endif %}
+        </button>
+        {% if back_url %}
+        <a href="{{ back_url }}" class="btn btn-outline-secondary px-4">Cancel</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

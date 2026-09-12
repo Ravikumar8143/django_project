@@ -1,0 +1,42 @@
+{% extends 'manage/layout.html' %}
+{% block title %}Confirm Delete | Admin Panel{% endblock %}
+{% block page_title %}Confirm Delete{% endblock %}
+
+{% block manage_content %}
+<div class="d-flex align-items-center gap-2 mb-4">
+  {% if back_url %}
+  <a href="{{ back_url }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Back
+  </a>
+  {% endif %}
+  <h5 class="mb-0 fw-bold text-danger">{{ title }}</h5>
+</div>
+
+<div class="card border-danger border-0 shadow-sm" style="max-width:480px">
+  <div class="card-body p-4 text-center">
+    <div style="width:64px;height:64px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+      <i class="bi bi-trash3-fill text-danger fs-4"></i>
+    </div>
+    <h6 class="fw-bold mb-2">Are you sure?</h6>
+    <p class="text-muted mb-1" style="font-size:.88rem">
+      You are about to permanently delete:
+    </p>
+    <p class="fw-semibold mb-3" style="font-size:.9rem">{{ object }}</p>
+    <p class="text-danger mb-4" style="font-size:.82rem">
+      <i class="bi bi-exclamation-triangle me-1"></i>
+      This action <strong>cannot be undone</strong>. Related records may also be affected.
+    </p>
+    <div class="d-flex justify-content-center gap-3">
+      {% if back_url %}
+      <a href="{{ back_url }}" class="btn btn-outline-secondary px-4">Cancel</a>
+      {% endif %}
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger px-4">
+          <i class="bi bi-trash me-1"></i>Yes, Delete
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>{% block title %}GITAM Timetable{% endblock %} | My-GITAM</title>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="Distribution" content="Global" />
+  <meta name="description" content="GITAM University Timetable & Room Booking System" />
+  <meta name="keywords" content="GITAM" />
+  <meta name="theme-color" content="#007367" />
+  <meta name="author" content="GITAM" />
+  <meta name="copyright" content="GITAM" />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <!-- Favicon -->
+  <link rel="shortcut icon" href="https://cdn.gitam.edu/images/favicon/favicon.ico" type="image/x-icon" />
+
+  <!-- Bootstrap -->
+  <link rel="stylesheet" href="https://cdn.gitam.edu/vendor/bootstrap-5.2.3/css/bootstrap.min.css" />
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdn.gitam.edu/icon/boxicons-2.1.4/css/boxicons.min.css" />
+  <link rel="stylesheet" href="https://cdn.gitam.edu/icon/remixIcon-3.1.1/remixicon.css" />
+  <link rel="stylesheet" href="https://cdn.gitam.edu/icon/fontawesome-6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdn.gitam.edu/vendor/bootstrap-icons/bootstrap-icons.css" />
+
+  <!-- jQuery UI -->
+  <link rel="stylesheet" href="https://cdn.gitam.edu/vendor/jquery-ui/css/jquery-ui.css" />
+
+  <!-- DataTables -->
+  <link rel="stylesheet" href="https://cdn.gitam.edu/vendor/dataTables/dataTables.bootstrap5.min.css" />
+  <link rel="stylesheet" href="https://cdn.gitam.edu/vendor/dataTables/ColumnFilterWidgets.css" />
+
+  <!-- Sweet Alerts -->
+  <link rel="stylesheet" href="https://cdn.gitam.edu/vendor/sweetAlert/sweetalert2.min.css" />
+
+  <!-- Daterangepicker -->
+  <link rel="stylesheet" href="https://cdn.gitam.edu/vendor/daterangepicker/css/daterange.min.css" />
+
+  <!-- Select2 -->
+  <link rel="stylesheet" href="https://cdn.gitam.edu/vendor/select2/select2.min.css" />
+
+  <!-- Datetimepicker -->
+  <link rel="stylesheet" href="https://cdn.gitam.edu/vendor/datetimepicker/tempus-dominus.min.css" />
+
+  <!-- Image Upload -->
+  <link rel="stylesheet" href="https://cdn.gitam.edu/vendor/imageUpload/imageuploadify.min.css" />
+
+  <!-- GITAM Root Styles -->
+  <link rel="stylesheet" href="https://cdn.gitam.edu/css/root.css" />
+
+  <style>
+    /* ── Brand tokens ────────────────────────────────────────────── */
+    :root {
+      --teal:          #007367;
+      --teal-dark:     #005a50;
+      --teal-deeper:   #004a42;
+      --teal-light:    #e6f4f2;
+      --gold:          #f7ddad;
+      --gold-dark:     #e8c57a;
+      --gold-text:     #7a5a1a;
+      --sidebar-width: 256px;
+      --topbar-h:      60px;
+    }
+
+    /* ── Base ────────────────────────────────────────────────────── */
+    body {
+      background: #f4f6f5;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: #1e2a28;
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────────────── */
+    #sidebar {
+      width: var(--sidebar-width);
+      min-height: 100vh;
+      background: linear-gradient(180deg, var(--teal-deeper) 0%, var(--teal-dark) 60%, var(--teal) 100%);
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 4px 0 20px rgba(0,115,103,.18);
+      transition: width .22s ease;
+    }
+
+    /* Brand bar */
+    #sidebar .brand {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: 1.1rem 1.25rem;
+      background: rgba(0,0,0,.18);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(247,221,173,.15);
+      flex-shrink: 0;
+    }
+    #sidebar .brand .brand-logo {
+      width: 38px; height: 38px;
+      background: var(--gold);
+      border-radius: .5rem;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    #sidebar .brand .brand-logo i { color: var(--teal-deep); font-size: 1.2rem; }
+    #sidebar .brand .brand-text { overflow: hidden; }
+    #sidebar .brand .brand-text strong {
+      display: block; font-size: .9rem; font-weight: 700;
+      color: #fff; white-space: nowrap;
+    }
+    #sidebar .brand .brand-text small {
+      display: block; font-size: .65rem;
+      color: var(--gold); opacity: .85; white-space: nowrap;
+    }
+
+    /* Section headers */
+    .nav-section {
+      font-size: .6rem;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      font-weight: 700;
+      color: rgba(247,221,173,.5);
+      padding: 1.1rem 1.25rem .3rem;
+    }
+
+    /* Nav links */
+    #sidebar .nav-link {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      padding: .6rem 1.25rem;
+      color: rgba(255,255,255,.65);
+      font-size: .82rem;
+      font-weight: 500;
+      border-left: 3px solid transparent;
+      transition: all .15s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    #sidebar .nav-link i { font-size: 1.05rem; flex-shrink: 0; }
+    #sidebar .nav-link:hover {
+      color: #fff;
+      background: rgba(247,221,173,.1);
+      border-left-color: var(--gold-dark);
+    }
+    #sidebar .nav-link.active {
+      color: #fff;
+      background: rgba(247,221,173,.15);
+      border-left-color: var(--gold);
+      font-weight: 600;
+    }
+
+    /* User footer */
+    #sidebar .sidebar-footer {
+      margin-top: auto;
+      padding: 1rem 1.1rem;
+      border-top: 1px solid rgba(247,221,173,.12);
+      background: rgba(0,0,0,.12);
+      flex-shrink: 0;
+    }
+    .user-avatar {
+      width: 36px; height: 36px;
+      background: var(--gold);
+      color: var(--teal-dark);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .78rem; font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* ── Topbar ──────────────────────────────────────────────────── */
+    #topbar {
+      height: var(--topbar-h);
+      background: #fff;
+      border-bottom: 2px solid var(--teal-light);
+      padding: 0 1.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 500;
+      box-shadow: 0 2px 8px rgba(0,115,103,.06);
+    }
+    #topbar .page-heading {
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--teal-dark);
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    #topbar .page-heading::before {
+      content: '';
+      width: 4px; height: 18px;
+      background: var(--gold);
+      border-radius: 2px;
+      display: inline-block;
+    }
+    .topbar-badge {
+      background: var(--gold);
+      color: var(--gold-text);
+      border: 1px solid var(--gold-dark);
+      font-size: .72rem;
+      font-weight: 600;
+      padding: .2rem .55rem;
+      border-radius: 20px;
+    }
+    .notif-btn {
+      position: relative;
+      background: var(--teal-light);
+      border: 1px solid rgba(0,115,103,.2);
+      color: var(--teal);
+      width: 36px; height: 36px;
+      border-radius: .5rem;
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none;
+      transition: background .15s;
+    }
+    .notif-btn:hover { background: var(--teal); color: #fff; }
+    .notif-count {
+      position: absolute;
+      top: -5px; right: -5px;
+      background: #e53e3e;
+      color: #fff;
+      font-size: .55rem;
+      font-weight: 700;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid #fff;
+    }
+
+    /* ── Main layout ─────────────────────────────────────────────── */
+    #main {
+      margin-left: var(--sidebar-width);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .page-content {
+      padding: 1.75rem;
+      flex: 1;
+    }
+
+    /* ── Cards ───────────────────────────────────────────────────── */
+    .card {
+      border-radius: .75rem !important;
+      border: 1px solid #e2eeec !important;
+      box-shadow: 0 2px 8px rgba(0,115,103,.06) !important;
+    }
+    .card-header {
+      background: #fff !important;
+      border-bottom: 1px solid #e2eeec !important;
+      border-radius: .75rem .75rem 0 0 !important;
+      padding: .9rem 1.25rem !important;
+      font-weight: 600;
+      color: var(--teal-dark);
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .card-header i { color: var(--teal); }
+
+    /* Stat cards */
+    .stat-card {
+      background: #fff;
+      border-radius: .75rem;
+      padding: 1.4rem;
+      border: 1px solid #e2eeec;
+      box-shadow: 0 2px 8px rgba(0,115,103,.06);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      height: 100%;
+    }
+    .stat-card .stat-icon {
+      width: 52px; height: 52px;
+      border-radius: .65rem;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    .stat-card .stat-value {
+      font-size: 1.9rem;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--teal-dark);
+    }
+    .stat-card .stat-label {
+      font-size: .73rem;
+      color: #6b8c87;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin-top: .2rem;
+    }
+
+    /* Gold accent bar on hover */
+    .stat-card { transition: box-shadow .2s, transform .2s; }
+    .stat-card:hover {
+      box-shadow: 0 6px 20px rgba(0,115,103,.12) !important;
+      transform: translateY(-2px);
+    }
+
+    /* ── Tables ──────────────────────────────────────────────────── */
+    .table thead th {
+      background: var(--teal-light);
+      color: var(--teal-dark);
+      font-size: .75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      border-bottom: 2px solid #cce3e0;
+      padding: .65rem .85rem;
+    }
+    .table tbody td {
+      font-size: .82rem;
+      vertical-align: middle;
+      padding: .6rem .85rem;
+      color: #2d3e3b;
+      border-color: #edf4f3;
+    }
+    .table tbody tr:hover td { background: #f4faf9; }
+
+    /* ── Timetable grid ──────────────────────────────────────────── */
+    .tt-grid th, .tt-grid td {
+      font-size: .72rem;
+      vertical-align: middle;
+      padding: .3rem .4rem;
+      white-space: nowrap;
+      border: 1px solid #d4e9e6;
+    }
+    .tt-grid thead th {
+      background: var(--teal);
+      color: #fff;
+      font-weight: 600;
+      font-size: .7rem;
+    }
+    .tt-grid tbody tr:first-child td { font-weight: 700; }
+    .tt-cell {
+      background: var(--teal-light);
+      border: 1px solid #b3d9d4;
+      border-radius: 5px;
+      padding: 3px 6px;
+      font-size: .7rem;
+      margin-bottom: 2px;
+      display: block;
+      color: var(--teal-dark);
+    }
+    .tt-cell.lab   { background: #fff8e8; border-color: var(--gold-dark); color: var(--gold-text); }
+    .tt-cell.oe    { background: #fdf2e0; border-color: #e8c57a; color: #7a5a1a; }
+    .tt-cell.lunch { background: #f4f6f5; color: #9aaba8; text-align: center; }
+
+    /* ── Badge colours ───────────────────────────────────────────── */
+    .badge-pending   { background: #fff8e8; color: #7a5a1a; border: 1px solid var(--gold-dark); }
+    .badge-approved  { background: var(--teal-light); color: var(--teal-dark); border: 1px solid #9ccfca; }
+    .badge-rejected  { background: #fff0f0; color: #9b1c1c; border: 1px solid #fca5a5; }
+    .badge-cancelled { background: #f4f6f5; color: #5a7470; border: 1px solid #d1d9d8; }
+    .badge-published { background: var(--teal-light); color: var(--teal-dark); border: 1px solid #9ccfca; }
+    .badge-draft     { background: #f4f6f5; color: #5a7470; border: 1px solid #d1d9d8; }
+
+    /* ── Buttons ─────────────────────────────────────────────────── */
+    .btn-primary {
+      background: var(--teal) !important;
+      border-color: var(--teal) !important;
+      font-weight: 600;
+    }
+    .btn-primary:hover { background: var(--teal-dark) !important; border-color: var(--teal-dark) !important; }
+    .btn-outline-primary {
+      color: var(--teal) !important;
+      border-color: var(--teal) !important;
+    }
+    .btn-outline-primary:hover { background: var(--teal) !important; color: #fff !important; }
+    .btn-gitam-gold {
+      background: var(--gold);
+      color: var(--gold-text);
+      border: 1px solid var(--gold-dark);
+      font-weight: 600;
+    }
+    .btn-gitam-gold:hover { background: var(--gold-dark); color: var(--gold-text); }
+
+    /* ── Group/role switcher dropdown ───────────────────────────────── */
+    #userGroupDropdown:hover, #userGroupDropdown:focus {
+      background: var(--teal-light) !important;
+    }
+    .dropdown-menu .dropdown-item { border-radius: .4rem; margin: 0 .35rem; width: calc(100% - .7rem); }
+    .dropdown-menu .dropdown-item:hover { background: var(--teal-light); }
+    .dropdown-menu .dropdown-item.active, .dropdown-menu .dropdown-item:active {
+      background: var(--teal) !important;
+      color: #fff !important;
+    }
+    .dropdown-menu .dropdown-item.active .badge { background: rgba(255,255,255,.25) !important; color: #fff !important; border-color: rgba(255,255,255,.4) !important; }
+    .dropdown-header { font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; color: #6b8c87; font-weight: 700; }
+
+    /* ── Alert flash messages ─────────────────────────────────────── */
+    .alert { border-radius: .6rem; font-size: .85rem; border: none; }
+    .alert-success { background: var(--teal-light); color: var(--teal-dark); border-left: 4px solid var(--teal); }
+    .alert-warning { background: #fff8e8; color: var(--gold-text); border-left: 4px solid var(--gold-dark); }
+    .alert-danger  { background: #fff0f0; color: #9b1c1c; border-left: 4px solid #f87171; }
+    .alert-info    { background: #f0f9ff; color: #0c4a6e; border-left: 4px solid #7dd3fc; }
+
+    /* ── Breadcrumb strip ─────────────────────────────────────────── */
+    .page-breadcrumb {
+      background: var(--gold);
+      border-radius: .5rem;
+      padding: .45rem 1rem;
+      font-size: .75rem;
+      font-weight: 600;
+      color: var(--gold-text);
+      margin-bottom: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+    }
+
+    /* ── Responsive ──────────────────────────────────────────────── */
+    @media (max-width: 991px) {
+      #sidebar { width: 60px; }
+      #sidebar .brand .brand-text,
+      #sidebar .nav-link span,
+      #sidebar .nav-section,
+      #sidebar .sidebar-footer .user-info { display: none; }
+      #sidebar .brand { justify-content: center; padding: .9rem .5rem; }
+      #sidebar .nav-link { justify-content: center; padding: .65rem; border-left: none; border-bottom: 2px solid transparent; }
+      #sidebar .nav-link:hover, #sidebar .nav-link.active { border-left: none; border-bottom-color: var(--gold); }
+      #main { margin-left: 60px; }
+    }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{% if user.is_authenticated %}
+<!-- ── Sidebar ─────────────────────────────────────────────────────────── -->
+<nav id="sidebar">
+
+  <a href="{% url 'dashboard:index' %}" class="brand">
+    <img src="https://cdn.gitam.edu/images/logo/cats-logo-white.png"
+         alt="GITAM" style="height:38px;width:auto;object-fit:contain">
+    <div class="brand-text">
+      <small style="opacity:.85">{{ user.get_role_display }}</small>
+    </div>
+  </a>
+
+  <div style="overflow-y:auto;flex:1">
+    <div class="nav-section">Main Menu</div>
+    <a href="{% url 'dashboard:index' %}" class="nav-link {% block nav_home %}{% endblock %}">
+      <i class="ri-dashboard-line"></i><span>Dashboard</span>
+    </a>
+    {% if user.role != 'admin' %}
+    <a href="{% url 'dashboard:timetable' %}" class="nav-link {% block nav_tt %}{% endblock %}">
+      <i class="ri-calendar-schedule-line"></i><span>Timetable</span>
+    </a>
+    {% endif %}
+    <a href="{% url 'dashboard:rooms' %}" class="nav-link {% block nav_rooms %}{% endblock %}">
+      <i class="ri-building-2-line"></i><span>Room Availability</span>
+    </a>
+
+    <div class="nav-section">Room Booking</div>
+    <a href="{% url 'bookings:calendar' %}" class="nav-link {% block nav_cal %}{% endblock %}">
+      <i class="ri-calendar-2-line"></i><span>Room Calendar</span>
+    </a>
+    <a href="{% url 'bookings:list' %}" class="nav-link {% block nav_bookings %}{% endblock %}">
+      <i class="ri-door-open-line"></i>
+      <span>My Bookings
+        {% if pending_bookings_count and user.role in 'admin hoi' %}
+        <span style="background:var(--gold);color:var(--gold-text);border-radius:10px;
+                     padding:.05rem .4rem;font-size:.6rem;font-weight:700;margin-left:.3rem">
+          {{ pending_bookings_count }}
+        </span>
+        {% endif %}
+      </span>
+    </a>
+    {% if user.role != 'student' %}
+    <a href="{% url 'bookings:create' %}" class="nav-link {% block nav_booking_new %}{% endblock %}">
+      <i class="ri-calendar-check-line"></i><span>New Booking</span>
+    </a>
+    {% endif %}
+
+    {% if user.role == 'admin' or user.role == 'hoi' %}
+    <div class="nav-section">Management</div>
+    <a href="{% url 'dashboard:hoi' %}" class="nav-link {% block nav_hoi %}{% endblock %}">
+      <i class="ri-checkbox-circle-line"></i><span>Booking Approvals</span>
+    </a>
+    {% if user.role == 'admin' %}
+    <a href="{% url 'dashboard:admin' %}" class="nav-link {% block nav_admin_panel %}{% endblock %}">
+      <i class="ri-equalizer-2-line"></i><span>Admin Panel</span>
+    </a>
+    <a href="{% url 'dashboard:employee_timetable_list' %}" class="nav-link {% block nav_emp_tt %}{% endblock %}">
+      <i class="ri-group-2-line"></i><span>Employee Timetable</span>
+    </a>
+    <a href="{% url 'dashboard:admin_timetable_overview' %}" class="nav-link {% block nav_tt_overview %}{% endblock %}">
+      <i class="ri-calendar-2-line"></i><span>Timetable Overview</span>
+    </a>
+    {% endif %}
+    {% endif %}
+
+    {% if user.role == 'hod' %}
+    <div class="nav-section">Department</div>
+    <a href="{% url 'dashboard:hod' %}" class="nav-link {% block nav_hod %}{% endblock %}">
+      <i class="ri-organization-chart"></i><span>HOD Panel</span>
+    </a>
+    {% endif %}
+
+    {% if user.role == 'faculty' %}
+    <div class="nav-section">Teaching</div>
+    <a href="{% url 'dashboard:faculty' %}" class="nav-link {% block nav_faculty %}{% endblock %}">
+      <i class="ri-vidicon-line"></i><span>My Schedule</span>
+    </a>
+    {% endif %}
+
+    {% if user.role == 'student' %}
+    <div class="nav-section">My Timetable</div>
+    <a href="{% url 'dashboard:student' %}" class="nav-link {% block nav_student %}{% endblock %}">
+      <i class="ri-calendar-2-line"></i><span>My Schedule</span>
+    </a>
+    {% endif %}
+
+    {% if user.role == 'coordinator' %}
+    <div class="nav-section">Coordinator</div>
+    <a href="{% url 'dashboard:coordinator' %}" class="nav-link">
+      <i class="ri-door-line"></i><span>Room Booking</span>
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- User footer -->
+  <div class="sidebar-footer">
+    <div class="d-flex align-items-center gap-2">
+      <div class="user-avatar">
+        {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+      </div>
+      <div class="user-info" style="overflow:hidden;min-width:0">
+        <div style="font-size:.78rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          {{ user.get_full_name|default:user.username }}
+        </div>
+        <div style="font-size:.65rem;color:var(--gold);opacity:.85">
+          {{ user.get_role_display }}
+        </div>
+      </div>
+    </div>
+    <a href="{% url 'accounts:logout' %}" class="nav-link mt-2" style="padding-left:.3rem">
+      <i class="ri-logout-box-r-line"></i><span>Sign Out</span>
+    </a>
+  </div>
+
+</nav>
+
+<!-- ── Main ──────────────────────────────────────────────────────────────── -->
+<div id="main">
+
+  <!-- Topbar -->
+  <div id="topbar">
+    <div class="page-heading">
+      {% block page_title %}Dashboard{% endblock %}
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      {% if user.role == 'admin' or user.role == 'hoi' %}
+      <a href="{% url 'dashboard:hoi' %}" class="notif-btn">
+        <i class="ri-notification-3-line" style="font-size:1rem"></i>
+        {% if pending_bookings_count %}
+        <span class="notif-count">{{ pending_bookings_count }}</span>
+        {% endif %}
+      </a>
+      {% endif %}
+      <div class="dropdown">
+        <button type="button" class="btn d-flex align-items-center gap-2 border-0 bg-transparent p-1"
+                id="userGroupDropdown" data-bs-toggle="dropdown" aria-expanded="false"
+                style="border-radius:.5rem">
+          <div class="user-avatar" style="width:32px;height:32px;font-size:.72rem;background:var(--teal-light);color:var(--teal-dark)">
+            {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+          </div>
+          <div style="font-size:.78rem;line-height:1.3;text-align:left">
+            <div class="fw-semibold" style="color:var(--teal-dark)">{{ user.get_full_name|default:user.username }}</div>
+            <div style="color:#6b8c87;font-size:.68rem">{{ user.email }}</div>
+          </div>
+          <i class="ri-arrow-down-s-line" style="color:#6b8c87;font-size:1.05rem"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm py-2" aria-labelledby="userGroupDropdown"
+            style="min-width:280px;font-size:.83rem">
+          <li><h6 class="dropdown-header">Your groups &amp; roles (user_group mapping)</h6></li>
+          {% for m in user_memberships %}
+          <li>
+            <form method="post" action="{% url 'accounts:switch_group' m.id %}">
+              {% csrf_token %}
+              <button type="submit"
+                      class="dropdown-item d-flex justify-content-between align-items-center gap-2 py-2{% if m.is_active %} active{% endif %}">
+                <span class="d-flex align-items-center gap-2">
+                  <i class="ri-group-line"></i>
+                  <span>
+                    {{ m.group.name }}
+                    <span class="badge bg-light text-dark border ms-1" style="font-size:.65rem;text-transform:capitalize">{{ m.role }}</span>
+                  </span>
+                </span>
+                {% if m.is_active %}
+                  <span class="badge bg-success" style="font-size:.62rem">Active</span>
+                {% else %}
+                  <span class="badge bg-secondary" style="font-size:.62rem">Inactive</span>
+                {% endif %}
+              </button>
+            </form>
+          </li>
+          {% empty %}
+          <li><span class="dropdown-item-text text-muted">No groups assigned yet</span></li>
+          {% endfor %}
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <form method="post" action="{% url 'accounts:logout' %}">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2">
+                <i class="ri-logout-box-r-line"></i>Logout
+              </button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page content -->
+  <div class="page-content">
+
+{% endif %}
+
+{% block content %}{% endblock %}
+
+{% if user.is_authenticated %}
+  </div><!-- /page-content -->
+</div><!-- /main -->
+{% endif %}
+
+<!-- ── Scripts ────────────────────────────────────────────────────────────── -->
+<!-- cdn.gitam.edu doesn't actually host jquery/jquery-ui (404s) -- loading jQuery
+     itself from the public jQuery CDN so DataTables/Select2 (which need $) work. -->
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdn.gitam.edu/vendor/bootstrap-5.2.3/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.gitam.edu/vendor/dataTables/jquery.dataTables.min.js"></script>
+<script src="https://cdn.gitam.edu/vendor/dataTables/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.gitam.edu/vendor/sweetAlert/sweetalert2.min.js"></script>
+<script src="https://cdn.gitam.edu/vendor/select2/select2.min.js"></script>
+<script src="https://cdn.gitam.edu/vendor/jqueryValidation/jquery.validate.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% block extra_js %}{% endblock %}
+{% if messages %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    {% for message in messages %}
+    Swal.fire({
+        icon: "{% if message.tags == 'success' %}success
+               {% elif message.tags == 'error' %}error
+               {% elif message.tags == 'warning' %}warning
+               {% else %}info{% endif %}",
+        title: "{{ message|escapejs }}",
+        confirmButtonColor: "#007367"
+    });
+
+    {% endfor %}
+
+});
+</script>
+{% endif %}
+</body>
+
+</html>

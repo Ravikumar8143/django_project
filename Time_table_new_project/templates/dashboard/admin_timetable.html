@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% block title %}Admin Timetable Overview{% endblock %}
+{% block page_title %}Admin Timetable Overview{% endblock %}
+{% block nav_admin_panel %}active{% endblock %}
+{% block nav_tt_overview %}active{% endblock %}
+
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/components.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<!-- Breadcrumb & header -->
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+  <div>
+    <span class="page-breadcrumb">
+      <i class="bi bi-calendar2-week-fill"></i> Admin &rsaquo; Timetable Overview
+    </span>
+  </div>
+  <div class="d-flex gap-2 align-items-center flex-wrap">
+    <span class="stat-pill"><i class="bi bi-person-fill"></i> {{ faculty_cards|length }} Faculty</span>
+    <span class="stat-pill"><i class="bi bi-table"></i> {{ total_entries }} Sessions</span>
+    <a href="{% url 'dashboard:admin_timetable_export' %}?faculty={{ f_faculty }}&section={{ f_section }}&room={{ f_room }}&date_from={{ f_date_from }}&date_to={{ f_date_to }}&academic_year={{ f_ay }}"
+       class="btn btn-sm btn-success">
+      <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+    </a>
+    <a href="{% url 'dashboard:employee_timetable_list' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-list-ul me-1"></i>Manage Raw Entries
+    </a>
+  </div>
+</div>
+
+<!-- ── Filter bar ──────────────────────────────────────────── -->
+<form method="get" class="filter-bar">
+  <div class="row g-2 align-items-end">
+    <div class="col-6 col-md-2">
+      <label>Faculty Name</label>
+      <input type="text" name="faculty" class="form-control" placeholder="Search…" value="{{ f_faculty }}">
+    </div>
+    <div class="col-6 col-md-2">
+      <label>Section</label>
+      <select name="section" class="form-select">
+        <option value="">All sections</option>
+        {% for s in all_sections %}
+        <option value="{{ s }}" {% if f_section == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <label>Room</label>
+      <select name="room" class="form-select">
+        <option value="">All rooms</option>
+        {% for r in all_rooms %}
+        <option value="{{ r }}" {% if f_room == r %}selected{% endif %}>{{ r }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <label>Date From</label>
+      <input type="date" name="date_from" class="form-control" value="{{ f_date_from }}">
+    </div>
+    <div class="col-6 col-md-2">
+      <label>Date To</label>
+      <input type="date" name="date_to" class="form-control" value="{{ f_date_to }}">
+    </div>
+    <div class="col-6 col-md-2 d-flex gap-1">
+      <button type="submit" class="btn btn-primary btn-sm flex-fill">
+        <i class="bi bi-funnel me-1"></i>Filter
+      </button>
+      <a href="{% url 'dashboard:admin_timetable_overview' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-x-lg"></i>
+      </a>
+    </div>
+  </div>
+</form>
+
+<!-- ── Tabs ─────────────────────────────────────────────────── -->
+<ul class="nav nav-tabs mb-3" id="ttTabs">
+  <li class="nav-item">
+    <a class="nav-link active" data-bs-toggle="tab" href="#facultyView">
+      <i class="bi bi-person-badge me-1"></i>Faculty View
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" data-bs-toggle="tab" href="#masterTable">
+      <i class="bi bi-table me-1"></i>Master Table
+    </a>
+  </li>
+</ul>
+
+<div class="tab-content">
+
+  <!-- ═══ FACULTY CARDS TAB ═══════════════════════════════════ -->
+  <div class="tab-pane fade show active" id="facultyView">
+    {% if faculty_cards %}
+    <div class="row g-3">
+      {% for fac in faculty_cards %}
+      <div class="col-12 col-md-6 col-xl-4">
+        <div class="fac-card">
+          <div class="fac-card-header">
+            <div class="fac-name">{{ fac.name }}</div>
+            <div class="fac-meta">
+              {% if fac.designation %}{{ fac.designation }}{% endif %}
+              {% if fac.dept %} &middot; {{ fac.dept }}{% endif %}
+            </div>
+            {% if fac.email %}
+            <div class="fac-meta" style="opacity:.7">
+              <i class="bi bi-envelope me-1"></i>{{ fac.email }}
+            </div>
+            {% endif %}
+          </div>
+          <div class="fac-card-body">
+            {% for c in fac.course_list %}
+            <div class="course-row">
+              <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                <span class="cr-code">{{ c.subject_code }}</span>
+                <span class="cr-section">{{ c.section }}</span>
+                {% if c.room %}
+                <span class="cr-room">
+                  <i class="bi bi-door-open me-1"></i>{{ c.room.room_id }}
+                  {% if c.room.building %}<span style="opacity:.7">· {{ c.room.building.name }}</span>{% endif %}
+                </span>
+                {% else %}
+                <span class="badge bg-secondary" style="font-size:.65rem">No room</span>
+                {% endif %}
+              </div>
+              <div class="text-muted" style="font-size:.74rem">
+                {{ c.subject_name }}
+              </div>
+              <div class="d-flex gap-3 mt-1">
+                <span class="cr-sessions">
+                  <i class="bi bi-calendar3 me-1"></i>{{ c.date_range }}
+                </span>
+                <span class="cr-sessions">
+                  <i class="bi bi-clock me-1"></i>{{ c.session_count }} session{{ c.session_count|pluralize }}
+                </span>
+                {% if c.time_slots %}
+                <span class="cr-sessions">
+                  <i class="bi bi-layers me-1"></i>Slot{% if c.time_slots|length > 1 %}s{% endif %}
+                  {{ c.time_slots|join:", " }}
+                </span>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="fac-card-footer">
+            <i class="bi bi-collection me-1"></i>{{ fac.course_list_count }} course{{ fac.course_list_count|pluralize }}
+            &nbsp;·&nbsp;
+            <i class="bi bi-calendar-check me-1"></i>{{ fac.total_sessions }} total session{{ fac.total_sessions|pluralize }}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-inbox" style="font-size:3rem;opacity:.25;display:block;margin-bottom:.75rem"></i>
+      No timetable records found{% if f_faculty or f_section or f_room %} matching the current filters{% endif %}.
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ═══ MASTER TABLE TAB ════════════════════════════════════ -->
+  <div class="tab-pane fade" id="masterTable">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table id="masterTtTable" class="table table-hover mb-0" style="font-size:.8rem">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
+                <th>Faculty</th>
+                <th>Designation</th>
+                <th>Department</th>
+                <th>Subject Code</th>
+                <th>Subject Name</th>
+                <th>Section</th>
+                <th>Sem</th>
+                <th>Date</th>
+                <th>Slot</th>
+                <th>Time</th>
+                <th>Room</th>
+                <th>Building</th>
+                <th>Acad Year</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for e in entries %}
+              <tr>
+                <td class="text-muted">{{ forloop.counter }}</td>
+                <td class="fw-semibold">{{ e.emp_name|default:"—" }}</td>
+                <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                    title="{{ e.designation }}">{{ e.designation|default:"—" }}</td>
+                <td>{{ e.dept_name|default:"—" }}</td>
+                <td><code>{{ e.subject_code }}</code></td>
+                <td>{{ e.subject_name|default:"—" }}</td>
+                <td>
+                  <span style="background:#f7ddad;color:#7a5a00;font-weight:600;border-radius:20px;padding:.1rem .45rem;font-size:.7rem">
+                    {{ e.section }}
+                  </span>
+                </td>
+                <td class="text-center">{{ e.semester }}</td>
+                <td style="white-space:nowrap">{{ e.scheduled_date|date:"d M Y"|default:"—" }}</td>
+                <td class="text-center">
+                  {% if e.time_slot %}{{ e.time_slot.slot_number }}{% else %}—{% endif %}
+                </td>
+                <td style="white-space:nowrap">
+                  {% if e.time_slot %}
+                  {{ e.time_slot.start_time|time:"H:i" }}–{{ e.time_slot.end_time|time:"H:i" }}
+                  {% else %}—{% endif %}
+                </td>
+                <td>
+                  {% if e.room %}
+                  <span style="background:#dbeafe;color:#1e40af;font-weight:600;border-radius:20px;padding:.1rem .45rem;font-size:.7rem">
+                    {{ e.room.room_id }}
+                  </span>
+                  {% else %}<span class="text-muted">—</span>{% endif %}
+                </td>
+                <td>{{ e.room.building.name|default:"—" }}</td>
+                <td>{{ e.academic_year|default:"—" }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="14" class="text-center text-muted py-4">No entries found.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /tab-content -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(function () {
+  if ($.fn.DataTable) {
+    $('#masterTtTable').DataTable({
+      pageLength: 25,
+      order: [[1, 'asc'], [6, 'asc'], [8, 'asc']],
+      language: {
+        search: '<i class="bi bi-search"></i>',
+        searchPlaceholder: 'Search table…',
+      },
+      columnDefs: [
+        { targets: 0, orderable: false, searchable: false, width: '40px' },
+      ],
+    });
+  }
+
+  // Persist active tab across page loads
+  var activeTab = sessionStorage.getItem('adminTtTab');
+  if (activeTab) {
+    $('#ttTabs a[href="' + activeTab + '"]').tab('show');
+  }
+  $('#ttTabs a').on('shown.bs.tab', function (e) {
+    sessionStorage.setItem('adminTtTab', $(e.target).attr('href'));
+  });
+});
+</script>
+{% endblock %}

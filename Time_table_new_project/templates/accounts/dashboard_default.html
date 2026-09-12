@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.gitam.edu/vendor/bootstrap-5.2.3/css/bootstrap.min.css">
+</head>
+<body style="background:#f4f6f5">
+  <div class="container py-5" style="max-width:720px">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+
+        <h4 class="mb-3">Welcome, {{ user.get_full_name|default:user.username }}</h4>
+        <div class="alert alert-warning">
+          No active role/membership is assigned to your account yet
+          (check the <code>UserGroups</code> table -- you need a row with
+          <code>is_active=True</code> and <code>is_block=False</code>).
+          Contact an administrator.
+        </div>
+
+        <form method="post" action="{% url 'accounts:logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-danger">Logout</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

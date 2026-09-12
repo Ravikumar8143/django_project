@@ -1,0 +1,67 @@
+/* ============================================================
+   manage.css — Custom admin manage panel styles
+   GITAM Timetable Management System
+   ============================================================ */
+
+/* ── manage/layout.html — Sidebar navigation ────────────── */
+.manage-link {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .45rem 1rem;
+  font-size: .8rem;
+  color: #475569;
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: all .12s;
+}
+.manage-link i { font-size: .95rem; }
+.manage-link:hover {
+  background: #f1f5f9;
+  color: #007367;
+  border-left-color: #007367;
+}
+.manage-link.active {
+  background: #e6f4f2;
+  color: #007367;
+  border-left-color: #007367;
+  font-weight: 600;
+}
+
+/* ── manage/list.html — DataTable spacing ───────────────── */
+/* The card-body wrapping the table uses p-0 so the table itself sits
+   flush edge-to-edge, but DataTables injects its length/search/info/
+   pagination controls as siblings of that table inside the same
+   zero-padding container -- give those their own breathing room. */
+#manageTable_wrapper,
+#recentBookingsTable_wrapper {
+  padding: 1rem 1.25rem;
+}
+#manageTable_wrapper .dataTables_length,
+#manageTable_wrapper .dataTables_filter,
+#recentBookingsTable_wrapper .dataTables_length,
+#recentBookingsTable_wrapper .dataTables_filter {
+  margin-bottom: .85rem;
+}
+#manageTable_wrapper .dataTables_info,
+#manageTable_wrapper .dataTables_paginate,
+#recentBookingsTable_wrapper .dataTables_info,
+#recentBookingsTable_wrapper .dataTables_paginate {
+  margin-top: .85rem;
+}
+#manageTable_wrapper .dataTables_filter input,
+#manageTable_wrapper .dataTables_length select {
+  border-radius: .4rem;
+  border: 1px solid #cbd5e1;
+  padding: .3rem .6rem;
+}
+#manageTable th, #manageTable td,
+#recentBookingsTable th, #recentBookingsTable td {
+  padding: .65rem .9rem !important;
+}
+#manageTable_wrapper .dataTables_paginate .paginate_button.current,
+#recentBookingsTable_wrapper .dataTables_paginate .paginate_button.current {
+  background: #007367 !important;
+  border-color: #007367 !important;
+  color: #fff !important;
+}

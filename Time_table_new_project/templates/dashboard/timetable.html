@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Published Timetable{% endblock %}
+{% block page_title %}Published Timetable{% endblock %}
+{% block nav_tt %}active{% endblock %}
+
+{% block content %}
+{% if timetable %}
+<div class="alert alert-info py-2 mb-3" style="font-size:.85rem">
+  <i class="bi bi-info-circle me-1"></i>
+  <strong>{{ timetable.label|default:timetable }}</strong> —
+  Published timetable for {{ timetable.academic_year }}
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0 overflow-auto">
+    <table class="table tt-grid mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Day</th>
+          <th>08:00<br><small>Slot 1</small></th>
+          <th>09:00<br><small>Slot 2</small></th>
+          <th>10:00<br><small>Slot 3</small></th>
+          <th>11:00<br><small>Slot 4</small></th>
+          <th>12:00<br><small>Slot 5</small></th>
+          <th class="text-muted">Lunch</th>
+          <th>14:00<br><small>Slot 7</small></th>
+          <th>15:00<br><small>Slot 8</small></th>
+          <th>16:00<br><small>Slot 9</small></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for day_code, day_name in days %}
+        <tr>
+          <td class="fw-semibold text-nowrap">{{ day_name }}<br><small class="text-muted">({{ day_code }})</small></td>
+          {% for slot_num in slots %}
+          {% if slot_num == 6 %}
+          <td class="text-center tt-cell lunch">LUNCH<br><small>13:00</small></td>
+          {% else %}
+          <td>
+            {% with key=day_code|add:slot_num|stringformat:"d" %}
+            {% for entry in grid|default_if_none:'' %}{% endfor %}
+            {% endwith %}
+            {% for e_day, e_slot in grid.keys %}
+            {% endfor %}
+          </td>
+          {% endif %}
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="mt-3 text-muted" style="font-size:.8rem">
+  Total entries: {{ timetable.entries.count }}
+</div>
+
+{% else %}
+<div class="card border-0 shadow-sm">
+  <div class="card-body text-center py-5 text-muted">
+    <i class="bi bi-calendar-x fs-2 d-block mb-3"></i>
+    <h5>No Published Timetable</h5>
+    <p>No timetable has been published yet. Please check back later or contact the system administrator.</p>
+    {% if user.role == 'admin' %}
+    <a href="/admin/scheduling/timetable/" class="btn btn-primary">Manage Timetables</a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends 'manage/layout.html' %}
+{% block title %}{{ title }} | Admin Panel{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block manage_content %}
+<div class="d-flex align-items-center gap-2 mb-4">
+  <a href="{{ back_url }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Back
+  </a>
+  <h5 class="mb-0 fw-bold" style="color:#007367">{{ title }}</h5>
+</div>
+<div class="card border-0 shadow-sm" style="max-width:700px">
+  <div class="card-body p-4">
+    <form method="post" novalidate id="userForm">
+      {% csrf_token %}
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold" for="id_username" style="font-size:.8rem">
+            Username  <span class="text-danger">*</span>
+          </label>
+          <input type="text" name="username" id="id_username" class="form-control{% if errors.username %} is-invalid{% endif %}"
+                 value="{{ values.username }}">
+          {% if errors.username %}<div class="invalid-feedback d-block">{{ errors.username }}</div>{% endif %}
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold" for="id_email" style="font-size:.8rem">
+            Email <span class="text-danger">*</span>
+          </label>
+          <input type="email" name="email" id="id_email" class="form-control{% if errors.email %} is-invalid{% endif %}"
+                 value="{{ values.email }}">
+          {% if errors.email %}<div class="invalid-feedback d-block">{{ errors.email }}</div>{% endif %}
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold" for="id_first_name" style="font-size:.8rem">
+            First Name <span class="text-danger">*</span>
+          </label>
+          <input type="text" name="first_name" id="id_first_name"
+                 class="form-control{% if errors.first_name %} is-invalid{% endif %}" value="{{ values.first_name }}">
+          {% if errors.first_name %}<div class="invalid-feedback d-block">{{ errors.first_name }}</div>{% endif %}
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold" for="id_last_name" style="font-size:.8rem">
+            Last Name <span class="text-danger">*</span>
+          </label>
+          <input type="text" name="last_name" id="id_last_name"
+                 class="form-control{% if errors.last_name %} is-invalid{% endif %}" value="{{ values.last_name }}">
+          {% if errors.last_name %}<div class="invalid-feedback d-block">{{ errors.last_name }}</div>{% endif %}
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold" for="id_phone" style="font-size:.8rem">Phone</label>
+          <input type="text" name="phone" id="id_phone" class="form-control{% if errors.phone %} is-invalid{% endif %}"
+                 value="{{ values.phone }}">
+          {% if errors.phone %}<div class="invalid-feedback d-block">{{ errors.phone }}</div>{% endif %}
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold" for="id_emp_id" style="font-size:.8rem">
+            Employee ID <span class="text-danger">*</span>
+          </label>
+          <input type="text" name="emp_id" id="id_emp_id" class="form-control{% if errors.emp_id %} is-invalid{% endif %}"
+                 value="{{ values.emp_id }}">
+          {% if errors.emp_id %}<div class="invalid-feedback d-block">{{ errors.emp_id }}</div>{% endif %}
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold" for="id_campus" style="font-size:.8rem">Campus</label>
+          <input type="text" name="campus" id="id_campus" class="form-control" value="{{ values.campus }}">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold" for="id_dept_code" style="font-size:.8rem">Department Code</label>
+          <input type="text" name="dept_code" id="id_dept_code" class="form-control" value="{{ values.dept_code }}">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold" for="id_password1" style="font-size:.8rem">
+            {% if is_edit %}New Password (leave blank to keep current){% else %}Password <span class="text-danger">*</span>{% endif %}
+          </label>
+          <input type="password" name="password1" id="id_password1"
+                 class="form-control{% if errors.password1 %} is-invalid{% endif %}">
+          {% if errors.password1 %}<div class="invalid-feedback d-block">{{ errors.password1 }}</div>{% endif %}
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold" for="id_password2" style="font-size:.8rem">
+            Confirm Password{% if not is_edit %} <span class="text-danger">*</span>{% endif %}
+          </label>
+          <input type="password" name="password2" id="id_password2"
+                 class="form-control{% if errors.password2 %} is-invalid{% endif %}">
+          {% if errors.password2 %}<div class="invalid-feedback d-block">{{ errors.password2 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <hr class="my-4">
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary px-4" style="background:#007367;border-color:#007367">
+          <i class="bi bi-check-lg me-1"></i>{% if is_edit %}Save Changes{% else %}Create{% endif %}
+        </button>
+        <a href="{{ back_url }}" class="btn btn-outline-secondary px-4">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+$(document).ready(function () {
+
+    var isEdit = {{ is_edit|yesno:"true,false" }};
+
+    $("#userForm").validate({
+
+        rules: {
+            username: { required: true },
+            email: { required: true, email: true },
+            emp_id: { required: true },
+            first_name: { required: true },
+            last_name: { required: true },
+            phone: {
+                required: true,
+                digits: true
+            },
+            password1: {
+                required: function () {
+                    return !isEdit;
+                }
+            },
+            password2: {
+                required: function () {
+                    return !isEdit;
+                },
+                equalTo: "#id_password1"
+            }
+        },
+
+        messages: {
+            username: { required: "Username is required." },
+            email: {
+                required: "Email is required.",
+                email: "Enter a valid email."
+            },
+            emp_id: { required: "Employee ID is required." },
+            first_name: { required: "First Name is required." },
+            last_name: { required: "Last Name is required." },
+            phone: {
+                required: "Phone number is required.",
+                digits: "Only digits are allowed."
+            },
+            password1: { required: "Password is required." },
+            password2: {
+                required: "Confirm Password is required.",
+                equalTo: "Passwords do not match."
+            }
+        },
+
+        submitHandler: function (form) {
+
+            Swal.fire({
+                title: "Please wait...",
+                text: "Saving user details...",
+                allowOutsideClick: false,
+                didOpen: function () {
+                    Swal.showLoading();
+                }
+            });
+
+            form.submit(); // Submit the form
+        }
+
+    });
+
+});
+</script>
+{% endblock %}

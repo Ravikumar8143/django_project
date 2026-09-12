@@ -1,0 +1,347 @@
+{% extends 'base.html' %}
+{% block title %}Employee Timetable{% endblock %}
+{% block page_title %}Employee Timetable{% endblock %}
+{% block nav_admin_panel %}active{% endblock %}
+{% block nav_emp_tt %}active{% endblock %}
+
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/components.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% for msg in messages %}
+<div class="alert alert-{{ msg.tags }} alert-dismissible fade show mb-3" role="alert">
+  {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+
+<!-- Header -->
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+  <span class="page-breadcrumb"><i class="ri-group-2-line"></i> Admin &rsaquo; Employee Timetable</span>
+  <div class="d-flex gap-2 flex-wrap">
+    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#bulkUploadModal">
+      <i class="ri-upload-2-line me-1"></i>Bulk Upload
+    </button>
+    <a href="{% url 'dashboard:employee_timetable_sample_download' %}" class="btn btn-gitam-gold btn-sm">
+      <i class="ri-download-2-line me-1"></i>Sample CSV
+    </a>
+    <a href="{% url 'dashboard:employee_timetable_add' %}" class="btn btn-primary btn-sm">
+      <i class="ri-add-line me-1"></i>Add Entry
+    </a>
+  </div>
+</div>
+
+<!-- Filter bar -->
+<form method="get" class="filter-bar">
+  <div class="row g-2 align-items-end">
+    <div class="col-12 col-sm-6 col-lg-3">
+      <label><i class="ri-search-line me-1"></i>Search</label>
+      <input type="text" name="q" class="form-control" placeholder="Name, ID, subject, section…" value="{{ q }}">
+    </div>
+    <div class="col-6 col-sm-4 col-lg-2">
+      <label>Section</label>
+      <select name="section" class="form-select">
+        <option value="">All sections</option>
+        {% for s in all_sections %}
+        <option value="{{ s }}" {% if f_section == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-sm-4 col-lg-1">
+      <label>Room</label>
+      <select name="room" class="form-select">
+        <option value="">All</option>
+        {% for r in all_rooms %}
+        <option value="{{ r }}" {% if f_room == r %}selected{% endif %}>{{ r }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-sm-3 col-lg-1">
+      <label>Sem</label>
+      <select name="semester" class="form-select">
+        <option value="">All</option>
+        {% for s in "12345678" %}
+        <option value="{{ s }}" {% if f_sem == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-sm-4 col-lg-2">
+      <label>Date From</label>
+      <input type="date" name="date_from" class="form-control" value="{{ f_date_from }}">
+    </div>
+    <div class="col-6 col-sm-4 col-lg-2">
+      <label>Date To</label>
+      <input type="date" name="date_to" class="form-control" value="{{ f_date_to }}">
+    </div>
+    <div class="col-6 col-sm-4 col-lg-1 d-flex gap-1">
+      <input type="hidden" name="sort" value="{{ sort_param }}">
+      <input type="hidden" name="per_page" value="{{ per_page }}">
+      <button type="submit" class="btn btn-primary btn-sm flex-fill"><i class="ri-filter-line"></i></button>
+      <a href="{% url 'dashboard:employee_timetable_list' %}" class="btn btn-outline-secondary btn-sm" title="Clear">
+        <i class="ri-close-line"></i>
+      </a>
+    </div>
+  </div>
+</form>
+
+<!-- Table card -->
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-white d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <span style="font-weight:600;font-size:.88rem"><i class="ri-table-2 me-1"></i>Timetable Entries</span>
+    <div class="d-flex align-items-center gap-3">
+      <span class="result-info">
+        {% if total == 0 %}No records found
+        {% else %}Showing <strong>{{ page_obj.start_index }}</strong>–<strong>{{ page_obj.end_index }}</strong> of <strong>{{ total }}</strong>{% endif %}
+      </span>
+      <div class="d-flex align-items-center gap-1 result-info">
+        Rows:
+        <select id="perPageSelect" class="form-select form-select-sm"
+                style="width:70px;font-size:.78rem;height:1.9rem;padding:.2rem .5rem">
+          <option value="10"  {% if per_page == 10  %}selected{% endif %}>10</option>
+          <option value="25"  {% if per_page == 25  %}selected{% endif %}>25</option>
+          <option value="50"  {% if per_page == 50  %}selected{% endif %}>50</option>
+          <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table id="empTtTable" class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th style="width:42px">#</th>
+
+            {% comment %}Helper macro: sort link for a column{% endcomment %}
+            {% comment %}sort_param current value, col = column key{% endcomment %}
+
+            <th class="sortable">
+              <a href="?{{ sort_base_qs }}{% if sort_base_qs %}&{% endif %}sort={% if sort_param == 'name' %}-name{% else %}name{% endif %}">
+                Name
+                <i class="ri-arrow-{% if sort_param == '-name' %}down{% else %}up{% endif %}-s-fill sort-icon {% if sort_param == 'name' or sort_param == '-name' %}on{% endif %}"></i>
+              </a>
+            </th>
+            <th>Emp ID</th>
+            <th>Designation</th>
+            <th>Department</th>
+
+            <th class="sortable">
+              <a href="?{{ sort_base_qs }}{% if sort_base_qs %}&{% endif %}sort={% if sort_param == 'code' %}-code{% else %}code{% endif %}">
+                Subject Code
+                <i class="ri-arrow-{% if sort_param == '-code' %}down{% else %}up{% endif %}-s-fill sort-icon {% if sort_param == 'code' or sort_param == '-code' %}on{% endif %}"></i>
+              </a>
+            </th>
+            <th>Subject Name</th>
+
+            <th class="sortable">
+              <a href="?{{ sort_base_qs }}{% if sort_base_qs %}&{% endif %}sort={% if sort_param == 'section' %}-section{% else %}section{% endif %}">
+                Section
+                <i class="ri-arrow-{% if sort_param == '-section' %}down{% else %}up{% endif %}-s-fill sort-icon {% if sort_param == 'section' or sort_param == '-section' %}on{% endif %}"></i>
+              </a>
+            </th>
+
+            <th class="sortable">
+              <a href="?{{ sort_base_qs }}{% if sort_base_qs %}&{% endif %}sort={% if sort_param == 'sem' %}-sem{% else %}sem{% endif %}">
+                Sem
+                <i class="ri-arrow-{% if sort_param == '-sem' %}down{% else %}up{% endif %}-s-fill sort-icon {% if sort_param == 'sem' or sort_param == '-sem' %}on{% endif %}"></i>
+              </a>
+            </th>
+
+            <th class="sortable">
+              <a href="?{{ sort_base_qs }}{% if sort_base_qs %}&{% endif %}sort={% if sort_param == 'date' %}-date{% else %}date{% endif %}">
+                Date
+                <i class="ri-arrow-{% if sort_param == '-date' %}down{% else %}up{% endif %}-s-fill sort-icon {% if sort_param == 'date' or sort_param == '-date' %}on{% endif %}"></i>
+              </a>
+            </th>
+
+            <th>Time Slot</th>
+
+            <th class="sortable">
+              <a href="?{{ sort_base_qs }}{% if sort_base_qs %}&{% endif %}sort={% if sort_param == 'room' %}-room{% else %}room{% endif %}">
+                Room
+                <i class="ri-arrow-{% if sort_param == '-room' %}down{% else %}up{% endif %}-s-fill sort-icon {% if sort_param == 'room' or sort_param == '-room' %}on{% endif %}"></i>
+              </a>
+            </th>
+
+            <th>Building</th>
+            <th>Acad Year</th>
+
+            <th class="sortable">
+              <a href="?{{ sort_base_qs }}{% if sort_base_qs %}&{% endif %}sort={% if sort_param == 'added' %}-added{% else %}added{% endif %}">
+                Added
+                <i class="ri-arrow-{% if sort_param == '-added' %}down{% else %}up{% endif %}-s-fill sort-icon {% if sort_param == 'added' or sort_param == '-added' %}on{% endif %}"></i>
+              </a>
+            </th>
+
+            <th style="width:82px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in page_obj %}
+          <tr>
+            <td class="text-muted">{{ page_obj.start_index|add:forloop.counter0 }}</td>
+            <td class="fw-semibold">{{ e.emp_name|default:"—" }}</td>
+            <td>
+              {% if e.empid %}<span class="emp-badge">{{ e.empid }}</span>{% else %}<span class="text-muted">—</span>{% endif %}
+            </td>
+            <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                title="{{ e.designation }}">{{ e.designation|default:"—" }}</td>
+            <td>{{ e.dept_name|default:"—" }}</td>
+            <td><code>{{ e.subject_code }}</code></td>
+            <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                title="{{ e.subject_name }}">{{ e.subject_name|default:"—" }}</td>
+            <td><span class="section-badge">{{ e.section }}</span></td>
+            <td class="text-center">{{ e.semester }}</td>
+            <td style="white-space:nowrap">{{ e.scheduled_date|date:"d M Y"|default:"—" }}</td>
+            <td style="white-space:nowrap">
+              {% if e.time_slot %}
+              <span class="emp-badge">Slot {{ e.time_slot.slot_number }}</span>
+              <small class="text-muted ms-1">{{ e.time_slot.start_time|time:"H:i" }}–{{ e.time_slot.end_time|time:"H:i" }}</small>
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              {% if e.room %}<span class="room-badge">{{ e.room.room_id }}</span>{% else %}<span class="text-muted">—</span>{% endif %}
+            </td>
+            <td>{{ e.room.building.name|default:"—" }}</td>
+            <td>{{ e.academic_year|default:"—" }}</td>
+            <td style="white-space:nowrap">{{ e.created_at|date:"d M Y" }}</td>
+            <td>
+              <div class="d-flex gap-1">
+                <a href="{% url 'dashboard:employee_timetable_edit' e.pk %}"
+                   class="btn btn-outline-primary btn-sm" style="padding:.2rem .5rem" title="Edit">
+                  <i class="ri-pencil-line"></i>
+                </a>
+                <form method="post" action="{% url 'dashboard:employee_timetable_delete' e.pk %}"
+                      onsubmit="return confirm('Delete this entry?')">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-outline-danger btn-sm"
+                          style="padding:.2rem .5rem" title="Delete">
+                    <i class="ri-delete-bin-6-line"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="16" class="text-center text-muted py-5">
+              <i class="ri-inbox-line" style="font-size:2.5rem;opacity:.25;display:block;margin-bottom:.5rem"></i>
+              {% if q or f_section or f_room or f_date_from or f_date_to or f_sem %}
+                No entries match the current filters.
+                <a href="{% url 'dashboard:employee_timetable_list' %}">Clear filters</a>
+              {% else %}
+                No timetable entries yet.
+                <a href="{% url 'dashboard:employee_timetable_add' %}">Add one</a> or bulk upload.
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination footer -->
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="card-footer bg-white d-flex align-items-center justify-content-between flex-wrap gap-2 py-2">
+    <span class="result-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    <nav aria-label="Page navigation">
+      <ul class="pagination mb-0">
+
+        <li class="page-item {% if not prev_page %}disabled{% endif %}">
+          <a class="page-link" href="?{{ filter_qs }}&page=1" title="First">
+            <i class="ri-skip-back-mini-line"></i>
+          </a>
+        </li>
+        <li class="page-item {% if not prev_page %}disabled{% endif %}">
+          <a class="page-link" href="?{{ filter_qs }}&page={{ prev_page|default:1 }}">
+            <i class="ri-arrow-left-s-line"></i>
+          </a>
+        </li>
+
+        {% for p in page_obj.paginator.page_range %}
+          {% if p >= page_obj.number|add:"-2" and p <= page_obj.number|add:"2" %}
+          <li class="page-item {% if p == page_obj.number %}active{% endif %}">
+            <a class="page-link" href="?{{ filter_qs }}&page={{ p }}">{{ p }}</a>
+          </li>
+          {% endif %}
+        {% endfor %}
+
+        <li class="page-item {% if not next_page %}disabled{% endif %}">
+          <a class="page-link" href="?{{ filter_qs }}&page={{ next_page|default:page_obj.number }}">
+            <i class="ri-arrow-right-s-line"></i>
+          </a>
+        </li>
+        <li class="page-item {% if not next_page %}disabled{% endif %}">
+          <a class="page-link" href="?{{ filter_qs }}&page={{ page_obj.paginator.num_pages }}" title="Last">
+            <i class="ri-skip-forward-mini-line"></i>
+          </a>
+        </li>
+
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+
+</div><!-- /card -->
+
+<!-- Bulk Upload Modal -->
+<div class="modal fade" id="bulkUploadModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0" style="background:var(--teal-light)">
+        <h5 class="modal-title" style="color:var(--teal-dark)">
+          <i class="ri-upload-2-line me-2"></i>Bulk Upload Timetable
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="{% url 'dashboard:employee_timetable_bulk_upload' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-body">
+          <p class="text-muted mb-3" style="font-size:.83rem">
+            Upload a CSV or Excel file with columns:
+            <code>empid, subject_code, subject_name, section, semester, room_id, academic_year</code>
+          </p>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">File <span class="text-danger">*</span></label>
+            <input type="file" name="bulk_file" class="form-control" accept=".csv,.xlsx,.xls" required>
+            <div class="form-text">Supported: CSV (.csv) or Excel (.xlsx)</div>
+          </div>
+          <div class="alert alert-info mb-0" style="font-size:.78rem">
+            <i class="ri-information-line me-1"></i>
+            Employee details (name, designation, dept) are auto-fetched from GITAM HR database by empid.
+            Rooms are matched by room_id. Academic year is matched by label (e.g. <em>2026-2027</em>).
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <a href="{% url 'dashboard:employee_timetable_sample_download' %}" class="btn btn-gitam-gold btn-sm">
+            <i class="ri-download-2-line me-1"></i>Sample CSV
+          </a>
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="ri-upload-2-line me-1"></i>Upload
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(function () {
+  $('#perPageSelect').on('change', function () {
+    var url = new URL(window.location.href);
+    url.searchParams.set('per_page', $(this).val());
+    url.searchParams.set('page', '1');
+    window.location = url.toString();
+  });
+});
+</script>
+{% endblock %}
