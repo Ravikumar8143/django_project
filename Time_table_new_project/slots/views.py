@@ -768,3 +768,10 @@ def user_delete_view(request, pk):
     user_obj.delete()
     messages.success(request, 'User deleted successfully.')
     return redirect('dashboard:manage_users')
+
+def login(request):
+    print("hbhbdhbdhdbfhdbhdbdfdbbhbfd")
+    return render(request,"jjshsjhjsshjhshsdsd")
+def calculate_total():
+    # new code
+    return 100
